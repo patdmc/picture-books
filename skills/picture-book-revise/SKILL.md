@@ -29,6 +29,6 @@ A reword that changes what a later page refers to → fix that page too, and say
 1. `node engine/cli/picture-book.js check <slug>` → `ok`. An engine change → `check --all`.
 2. `build <slug> --artifact` → republish `out/<slug>.html` to the same Artifact so the author can look.
 3. Report what changed, any side effect (a recoloured piece, a second caption), and that the render is unverified.
-4. Author approves → `build --all --root`, commit sources and built pages together. Ask before pushing; a push to `main` deploys the public site.
+4. Author approves → `build --all --pages`, commit sources and built pages together. Ask before pushing; a push to `main` deploys the public site.
 
 One ask, one change. Other problems noticed on the way → mention them, leave them.

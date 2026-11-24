@@ -1,4 +1,4 @@
-# Check the books on every push. GitHub Pages serves the committed pages straight from main,
+# Check the books on every push. GitHub Pages serves the committed pages in docs/ straight from main,
 # so this workflow does not deploy; it fails a push whose books are broken or whose built pages are stale.
 name: Check the books
 
@@ -24,4 +24,7 @@ jobs:
       - name: Check every book
         run: node engine/cli/picture-book.js check --all
       - name: The committed pages match the sources
-        run: node engine/cli/picture-book.js build --all --root && git diff --exit-code
+        run: |
+          node engine/cli/picture-book.js build --all --pages
+          git status --porcelain docs
+          test -z "$(git status --porcelain docs)"

@@ -13,6 +13,7 @@ engine/
   template/    what a new book and a new page start from
   site/        the landing page template
   docs/        STORY.md, CAST.md, DESIGN.md
+docs/          the built site that GitHub Pages serves (generated; do not edit)
 skills/        Claude Code skills: picture-book (script a book), picture-book-revise
 books/
   shelf.js     the books on the landing page, in order
@@ -40,10 +41,10 @@ open site/index.html
 
 ## Deploying
 
-The built pages are committed at the repo root (`index.html` and one folder per book), so GitHub Pages serves them straight from `main`. After changing a book or the engine:
+The built pages are committed in `docs/` (the shelf at `docs/index.html`, one folder per book), and GitHub Pages serves `main:/docs`. After changing a book or the engine:
 
 ```sh
-node engine/cli/picture-book.js build --all --root
+node engine/cli/picture-book.js build --all --pages
 ```
 
 Commit the result with the change. The workflow checks every book and fails a push whose committed pages are stale; it does not deploy.

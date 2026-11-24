@@ -6,6 +6,7 @@ const fs = require('fs'), path = require('path'), vm = require('vm');
 const ROOT = path.resolve(__dirname, '..', '..');
 const ENG = path.join(ROOT, 'engine'), BOOKS = path.join(ROOT, 'books');
 const SITE = path.join(ROOT, 'site'), OUT = path.join(ROOT, 'out');
+const PAGES = path.join(ROOT, 'docs');   // the published site: GitHub Pages serves main:/docs
 
 const read = p => fs.readFileSync(p, 'utf8');
 const write = (p, s) => { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, s); };
@@ -81,7 +82,7 @@ __out.push('ok: '+SC.length+' spreads (cover + '+(SC.length-1)+' pages)');`, ctx
 }
 
 function build(args) {
-  const artifact = args.includes('--artifact'), root = args.includes('--root'), dest = root ? ROOT : SITE, label = root ? '' : 'site/';
+  const artifact = args.includes('--artifact'), root = args.includes('--pages') || args.includes('--root'), dest = root ? PAGES : SITE, label = root ? 'docs/' : 'site/';
   const list = slugs(args.filter(a => !a.startsWith('--') || a === '--all'));
   for (const slug of list) {
     const b = loadBook(slug), body = bookBody(b);
@@ -134,4 +135,4 @@ if (cmd === 'build') build(args);
 else if (cmd === 'check') slugs(args).forEach(check);
 else if (cmd === 'init') init(args);
 else if (cmd === 'new') newPage(args);
-else { console.log('usage: picture-book <init <slug> "<Title>" | new <slug> <page> [--sheet] | build [slug...|--all] [--artifact|--root] | check [slug...|--all]>'); process.exit(cmd ? 1 : 0); }
+else { console.log('usage: picture-book <init <slug> "<Title>" | new <slug> <page> [--sheet] | build [slug...|--all] [--artifact|--pages] | check [slug...|--all]>'); process.exit(cmd ? 1 : 0); }
