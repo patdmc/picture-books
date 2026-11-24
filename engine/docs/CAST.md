@@ -105,7 +105,7 @@ Two settings in `book.config.js`, both overridable on the URL for comparing (`?s
 | setting | swaps | values |
 |---|---|---|
 | `style` | how every shape is drawn: outlines, texture, shadows, lettering. CSS and SVG filters in `book.css` and `shell.html`. | `paper` (cut paper), `ink` (coloured pen and ink with a wash), `felt` (thick cut felt standing off the page: side wall, soft shadow, matted fibres), `embroidery` (satin-stitch fills at three angles, backstitched outlines, linen ground) |
-| `cast` | who plays each role. A file in `engine/runtime/casts/` that registers replacements in `CASTS`. | `paper` (paper people). The only cast for now; the mechanism is kept for the next one. |
+| `cast` | who plays each role. A file in `engine/runtime/casts/` that registers replacements in `CASTS`. | `paper` (paper people), `amigurumi` (photographs of crocheted dolls, an image cast) |
 
 - A page can set its own `style:` and `cast:` in `scene.js`; the URL still wins.
 - `as(style, cast, () => ...)` draws part of a scene in another style and cast, so one page can mix them (each piece carries its style as an `st-*` class).
@@ -115,3 +115,17 @@ Two settings in `book.config.js`, both overridable on the URL for comparing (`?s
 - `embroidery` is the one style with JS: `poly()` adds satin stitch (`#satin0`-`#satin2`, chosen from the piece's position) to every piece 20 units or larger.
 - `check` draws every page in every style with every cast. `contact <slug>` writes `site/<slug>/contact-9.html`, every page in a grid; add `?style=` and `?cast=` to see the book another way.
 - Small pieces (under 10 across: pupils, specks) get the class `tiny`, and textured styles leave them crisp.
+
+## Image casts
+
+A cast can be photographs instead of drawings. Shoot or generate each character on a pure green background, then:
+
+```sh
+node engine/cli/picture-book.js sprite amigurumi dev-0-happy art/amigurumi/dev-0-happy.jpg
+```
+
+That removes the green (only green connected to the edge, so green light on the doll stays), takes the green out of edge pixels, trims, scales to 560px tall, and writes `engine/runtime/casts/amigurumi/dev-0-happy.png` plus its size in `sprites.json`. Keep the original in `art/<cast>/`.
+
+- Names are `<who>-<mood>[-up]`: `who` is `dev-<n>` (for `DEVS[n]`), `agent`, `repo` or `metric`; `mood` is `happy`, `flat`, `worry`, `wow` or `sleep`; `-up` has an arm raised.
+- `sprite(cast, names, x, y, height, o)` in `cast.js` draws the first name that exists, feet on `(x, y)`, with a soft shadow. A cast file decides the names and falls back to paper for anything without a picture yet.
+- Site builds copy the pictures to `<site>/sprites/`; Artifact builds embed them; the editor serves them.

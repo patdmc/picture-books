@@ -60,6 +60,8 @@ nav button:not(:disabled):active{transform:translateY(2px)}
 .pc{filter:drop-shadow(1.2px 2.2px 1.2px rgba(0,0,0,.3))}
 .t{font-family:var(--display); font-weight:700}
 .gloss{filter:none; opacity:.42; pointer-events:none}
+/* image casts: a photo carries its own shading, so only a soft cast shadow */
+.pc.sprite{filter:drop-shadow(2px 4px 4px rgba(0,0,0,.22)); stroke:none}
 .shadow{filter:none; opacity:.16}
 .mono{font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace; font-weight:500; white-space:pre; pointer-events:none}
 .t tspan{pointer-events:none}
@@ -378,6 +380,11 @@ function cloud(x,y,cls=''){return `<g class="${cls}"><g class="solid${stc()}">`+
    A cast is a set of replacements for the role helpers below, with the same arguments, the same
    feet point and about the same height, so every scene works with every cast. Cast files live in
    engine/runtime/casts/ and register themselves in CASTS. Styles (paper, ink, felt) are CSS only. */
+/* Image casts: a picture of a character, chosen by name, feet on (x,y), h units tall. Returns '' when the cast has no such picture. */
+function sprite(cast,names,x,y,hgt,o={}){const set=(typeof SPRITES!=='undefined'&&SPRITES[cast])||{},name=names.find(n=>set[n]);if(!name)return '';
+  const {w,h}=set[name],W=hgt*w/h,href=(SPRITE_DATA&&SPRITE_DATA[cast+'/'+name])||SPRITE_BASE+cast+'/'+name+'.png';
+  const img=`<image class="pc sprite" href="${href}" x="${f(-W/2)}" y="${f(-hgt)}" width="${f(W)}" height="${f(hgt)}"${o.flip?' transform="scale(-1,1)"':''}/>`;
+  return `<g transform="translate(${f(x)},${f(y)})" class="${o.cls||''}"><ellipse cx="0" cy="-1" rx="${f(W*.38)}" ry="${f(W*.07)}" fill="#000" opacity=".22"/>${img}</g>`}
 const ROLES={dev,face,agent,metric,repo,cloud,photo,rocket,book};
 const CASTS={paper:{}};
 const STYLES=['paper','ink','felt','embroidery'];
@@ -387,6 +394,25 @@ function as(style,cast,fn){const s0=STYLE,c0=CAST;STYLE=STYLES.includes(style)?s
   try{out=fn()}finally{const st=STYLE;STYLE=s0;useCast(c0);out=`<g class="sty-${st}">${out}</g>`}return out}
 function useCast(name){CAST=CASTS[name]?name:'paper';const k={...ROLES,...CASTS[CAST]};
   dev=k.dev;face=k.face;agent=k.agent;metric=k.metric;repo=k.repo;cloud=k.cloud;photo=k.photo;rocket=k.rocket;book=k.book}
+
+
+const SPRITES={"amigurumi":{"dev-0-happy":{"w":354,"h":560}}},SPRITE_BASE="../sprites/",SPRITE_DATA={};
+
+/* ---------- the amigurumi cast: photographs of crocheted dolls ----------
+   An image cast. The pictures live in engine/runtime/casts/amigurumi/, made from green-screen photos with
+     node engine/cli/picture-book.js sprite amigurumi <name> <photo>
+   and named <who>-<mood>[-up]: dev-0-happy, dev-0-wow-up, agent-worry, repo-happy, metric-happy.
+   who: dev-<n> for DEVS[n], agent, repo, metric. mood: happy, flat, worry, wow, sleep. -up: an arm raised.
+   Anything without a picture yet falls back: another mood, then arms down, then the Dev's picture, then paper. */
+function amiNames(who,m='happy',up=false){const ms=[m||'happy','happy'],ws=who==='dev-0'?[who]:[who,'dev-0'],out=[];
+  for(const w of ws)for(const mm of ms){if(up)out.push(`${w}-${mm}-up`);out.push(`${w}-${mm}`)}return out}
+CASTS.amigurumi={
+  dev(x,y,s,c,o={}){const k=Math.max(0,DEVS.indexOf(c));
+    return sprite('amigurumi',amiNames('dev-'+k,o.m,o.up||o.up2),x,y,150*s,{cls:o.cls,flip:false})||ROLES.dev(x,y,s,c,o)},
+  agent(x,y,s,col,o={}){return sprite('amigurumi',amiNames('agent',o.m,o.up).filter(n=>n.startsWith('agent')),x,y,125*s,{cls:o.cls})||ROLES.agent(x,y,s,col,o)},
+  repo(x,y,s,o={}){return sprite('amigurumi',[`repo-${o.folder?'folder':o.page?'page':'happy'}`,'repo-happy'],x,y,110*s,{cls:o.cls})||ROLES.repo(x,y,s,o)},
+  metric(x,y,r,col,cls=''){return sprite('amigurumi',['metric-happy'],x,y+r,r*2.2,{cls})||ROLES.metric(x,y,r,col,cls)},
+};
 
 
 /* ---------- skill-repo helpers ---------- */

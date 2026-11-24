@@ -141,6 +141,11 @@ function cloud(x,y,cls=''){return `<g class="${cls}"><g class="solid${stc()}">`+
    A cast is a set of replacements for the role helpers below, with the same arguments, the same
    feet point and about the same height, so every scene works with every cast. Cast files live in
    engine/runtime/casts/ and register themselves in CASTS. Styles (paper, ink, felt) are CSS only. */
+/* Image casts: a picture of a character, chosen by name, feet on (x,y), h units tall. Returns '' when the cast has no such picture. */
+function sprite(cast,names,x,y,hgt,o={}){const set=(typeof SPRITES!=='undefined'&&SPRITES[cast])||{},name=names.find(n=>set[n]);if(!name)return '';
+  const {w,h}=set[name],W=hgt*w/h,href=(SPRITE_DATA&&SPRITE_DATA[cast+'/'+name])||SPRITE_BASE+cast+'/'+name+'.png';
+  const img=`<image class="pc sprite" href="${href}" x="${f(-W/2)}" y="${f(-hgt)}" width="${f(W)}" height="${f(hgt)}"${o.flip?' transform="scale(-1,1)"':''}/>`;
+  return `<g transform="translate(${f(x)},${f(y)})" class="${o.cls||''}"><ellipse cx="0" cy="-1" rx="${f(W*.38)}" ry="${f(W*.07)}" fill="#000" opacity=".22"/>${img}</g>`}
 const ROLES={dev,face,agent,metric,repo,cloud,photo,rocket,book};
 const CASTS={paper:{}};
 const STYLES=['paper','ink','felt','embroidery'];

@@ -120,10 +120,17 @@ function handler(port) {
       if (req.method === 'GET' && pv) {
         if (!okName(pv[2])) return json(res, 400, { error: 'bad book' });
         let html;
-        try { html = pv[1] === 'contact' ? pb.contactHtml(pv[2]) : pb.fill(pb.SKELETON, { BODY: pb.bookBody(pb.loadBook(pv[2])) }); }
+        try { html = pv[1] === 'contact' ? pb.contactHtml(pv[2], 9, 'server') : pb.fill(pb.SKELETON, { BODY: pb.bookBody(pb.loadBook(pv[2]), false, 'server') }); }
         catch (e) { html = `<!doctype html><meta charset="utf-8"><pre style="white-space:pre-wrap;font:14px monospace;padding:16px;color:#a11">${String(e.message).replace(/</g, '&lt;')}</pre>`; }
         res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
         return res.end(html);
+      }
+      const sp = /^\/sprites\/([a-z0-9-]+)\/([a-z0-9-]+)\.png$/.exec(u.pathname);   // image casts' pictures, for the preview
+      if (req.method === 'GET' && sp) {
+        const file = path.join(ROOT, 'engine/runtime/casts', sp[1], sp[2] + '.png');
+        if (!fs.existsSync(file)) return json(res, 404, { error: 'no such sprite' });
+        res.writeHead(200, { 'content-type': 'image/png', 'cache-control': 'no-store' });
+        return res.end(fs.readFileSync(file));
       }
       if (req.method === 'GET' && u.pathname === '/api/books') return json(res, 200, books());
       if (req.method === 'GET' && u.pathname === '/api/check') { if (!okName(q.book)) return json(res, 400, { error: 'bad book' }); return json(res, 200, check(q.book)); }

@@ -55,6 +55,8 @@ nav button:not(:disabled):active{transform:translateY(2px)}
 .pc{filter:drop-shadow(1.2px 2.2px 1.2px rgba(0,0,0,.3))}
 .t{font-family:var(--display); font-weight:700}
 .gloss{filter:none; opacity:.42; pointer-events:none}
+/* image casts: a photo carries its own shading, so only a soft cast shadow */
+.pc.sprite{filter:drop-shadow(2px 4px 4px rgba(0,0,0,.22)); stroke:none}
 .shadow{filter:none; opacity:.16}
 .mono{font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace; font-weight:500; white-space:pre; pointer-events:none}
 .t tspan{pointer-events:none}

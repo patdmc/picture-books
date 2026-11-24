@@ -37,11 +37,26 @@ function loadBook(slug) {
   return { slug, dir, config, cut, pages, helpers, unused };
 }
 
-function bookJs(b) {
+// Image casts keep their pictures in engine/runtime/casts/<cast>/ with a sprites.json of their sizes.
+// How a page finds them: 'site' (copied to <site>/sprites/), 'server' (the editor serves /sprites/), 'data' (embedded, for Artifacts).
+const CDIR = path.join(ENG, 'runtime/casts');
+function spriteSets() {
+  if (!fs.existsSync(CDIR)) return {};
+  return Object.fromEntries(fs.readdirSync(CDIR).filter(d => fs.existsSync(path.join(CDIR, d, 'sprites.json')))
+    .map(d => [d, JSON.parse(read(path.join(CDIR, d, 'sprites.json')))]));
+}
+function copySprites(dest) {
+  for (const [cast, set] of Object.entries(spriteSets())) for (const name of Object.keys(set))
+    { fs.mkdirSync(path.join(dest, 'sprites', cast), { recursive: true }); fs.copyFileSync(path.join(CDIR, cast, name + '.png'), path.join(dest, 'sprites', cast, name + '.png')); }
+}
+function bookJs(b, sprites = 'site') {
   const sc = b.pages.map(p => `/* ${p.name} */ Object.assign({name:${JSON.stringify(p.name)}},\n${p.lines},\n${p.scene})`).join(',\n\n');
-  const cdir = path.join(ENG, 'runtime/casts');   // optional: other casts, each registering itself in CASTS
-  const casts = (fs.existsSync(cdir) ? fs.readdirSync(cdir) : []).filter(f => f.endsWith('.js')).sort().map(f => read(path.join(cdir, f)));
-  return [read(path.join(ENG, 'runtime/shapes.js')), read(path.join(ENG, 'runtime/cast.js')), ...casts, b.helpers,
+  const casts = (fs.existsSync(CDIR) ? fs.readdirSync(CDIR) : []).filter(f => f.endsWith('.js')).sort().map(f => read(path.join(CDIR, f)));
+  const sets = spriteSets(), data = {};
+  if (sprites === 'data') for (const [cast, set] of Object.entries(sets)) for (const name of Object.keys(set))
+    data[cast + '/' + name] = 'data:image/png;base64,' + fs.readFileSync(path.join(CDIR, cast, name + '.png')).toString('base64');
+  const spr = `const SPRITES=${JSON.stringify(sets)},SPRITE_BASE=${JSON.stringify(sprites === 'server' ? '/sprites/' : '../sprites/')},SPRITE_DATA=${JSON.stringify(data)};`;
+  return [read(path.join(ENG, 'runtime/shapes.js')), read(path.join(ENG, 'runtime/cast.js')), spr, ...casts, b.helpers,
     `const BOOK=${JSON.stringify({ style: b.config.style || 'paper', cast: b.config.cast || 'paper' })};\n/* ---------- the pages, in cut order ---------- */\nconst SC=[\n${sc}\n];`, read(path.join(ENG, 'runtime/book.js'))].join('\n\n');
 }
 
@@ -51,7 +66,7 @@ const SKELETON = '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
   'body{margin:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style></head><body>\n{{BODY}}\n</body></html>\n';
 
 // shelf: a link back to the landing page, for pages served from the site (not for Artifacts or the editor preview)
-const bookBody = (b, shelf = false) => fill(read(path.join(ENG, 'runtime/shell.html')), { SHELF: shelf ? '<a class="shelf" href="../">← All books</a>' : '', CSS: read(path.join(ENG, 'runtime/book.css')), JS: bookJs(b), TITLE: esc(b.config.title) });
+const bookBody = (b, shelf = false, sprites = 'site') => fill(read(path.join(ENG, 'runtime/shell.html')), { SHELF: shelf ? '<a class="shelf" href="../">← All books</a>' : '', CSS: read(path.join(ENG, 'runtime/book.css')), JS: bookJs(b, sprites), TITLE: esc(b.config.title) });
 
 function check(slug) { console.log(checkReport(slug)); }
 
@@ -96,7 +111,7 @@ function build(args) {
   const artifact = args.includes('--artifact'), root = args.includes('--pages') || args.includes('--root'), dest = root ? PAGES : SITE, label = root ? 'docs/' : 'site/';
   const list = slugs(args.filter(a => !a.startsWith('--') || a === '--all'));
   for (const slug of list) {
-    const b = loadBook(slug), body = bookBody(b, !artifact);
+    const b = loadBook(slug), body = bookBody(b, !artifact, artifact ? 'data' : 'site');
     if (artifact) { write(path.join(OUT, slug + '.html'), body); console.log(`out/${slug}.html (page body, for publishing as an Artifact)`); continue; }
     write(path.join(dest, slug, 'index.html'), fill(SKELETON, { BODY: body }));
     for (const a of b.config.aliases || [])
@@ -104,6 +119,7 @@ function build(args) {
     console.log(`${label}${slug}/index.html`);
   }
   if (artifact) return;
+  copySprites(dest);
   // One shelf per series, in the order the series first appears in shelf.js; books with no series come first, unlabelled.
   const shelves = new Map();
   for (const s of shelf()) { const c = evalFile(path.join(BOOKS, s, 'book.config.js')), k = c.series || '';
@@ -125,9 +141,10 @@ function contact(args) {
   const taps = +(opt('taps') ?? 9);
   const out = path.join(SITE, slug, `contact-${taps}.html`);
   write(out, contactHtml(slug, taps));
+  copySprites(SITE);
   console.log(path.relative(ROOT, out) + '   (add ?style=ink to compare)');
 }
-function contactHtml(slug, taps = 9) {
+function contactHtml(slug, taps = 9, sprites = 'site') {
   const b = loadBook(slug);
   const grid = `<script>
 document.querySelector('.desk').style.cssText='position:absolute;left:-10000px;top:0';
@@ -138,7 +155,7 @@ SC.forEach((sc,i)=>{S={n:${taps}};dress(sc);const d=document.createElement('figu
 document.body.appendChild(g);
 </script><style>.contact{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:12px;padding:12px}
 .contact figure{margin:0;background:var(--paper);color:var(--ink)}.contact svg{display:block;width:100%}.contact figcaption{padding:4px 8px;font-size:13px}</style>`;
-  return fill(SKELETON, { BODY: bookBody(b) }).replace('</body>', grid + '</body>');
+  return fill(SKELETON, { BODY: bookBody(b, false, sprites) }).replace('</body>', grid + '</body>');
 }
 
 function copyDir(from, to, map) {
@@ -177,7 +194,8 @@ if (require.main === module) {
     else if (cmd === 'contact') contact(args);
     else if (cmd === 'edit') require('../editor/server.js').serve(args);
     else if (cmd === 'new') newPage(args);
-    else { console.log('usage: picture-book <init <slug> "<Title>" | new <slug> <page> [--sheet] | build [slug...|--all] [--artifact|--pages] | check [slug...|--all] | contact <slug> [--taps N]>'); process.exit(cmd ? 1 : 0); }
+    else if (cmd === 'sprite') console.log(require('./sprite.js').sprite(args, path.join(ENG, 'runtime/casts')));
+    else { console.log('usage: picture-book <init <slug> "<Title>" | new <slug> <page> [--sheet] | build [slug...|--all] [--artifact|--pages] | check [slug...|--all] | contact <slug> [--taps N] | sprite <cast> <name> <image> | edit [--port N]>'); process.exit(cmd ? 1 : 0); }
   } catch (e) {
     console.error('error: ' + (e instanceof PBError ? e.message : (e.stack || e)));
     process.exit(1);
