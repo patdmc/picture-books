@@ -1,7 +1,11 @@
 /* ---------- the book ---------- */
 const $=id=>document.getElementById(id),stage=$('stage'),art=$('art'),sheet=$('sheet');
 let idx=0,drag=null,moved=false,swipe=null,enterT=0;
-function render(enter,focusKey){const sc=SC[idx];
+/* style and cast: ?style= and ?cast= win, then the page's own, then the book's, then paper */
+let Q;try{Q=new URLSearchParams(location.search)}catch(_){Q=new URLSearchParams()}
+function dress(sc){const st=Q.get('style')||sc.style||BOOK.style;STYLE=STYLES.includes(st)?st:'paper';useCast(Q.get('cast')||sc.cast||BOOK.cast);
+  try{document.documentElement.dataset.style=STYLE;document.documentElement.dataset.cast=CAST}catch(_){}}
+function render(enter,focusKey){const sc=SC[idx];dress(sc);
   art.innerHTML=`<rect width="800" height="500" fill="${sc.bg}"/>`+sc.draw(S);
   if(enter){$('cap').textContent=sc.cap;$('hint').textContent=sc.hint;
     $('count').textContent=idx?`page ${idx} of ${SC.length-1}`:'cover';$('prev').disabled=!idx;
@@ -35,10 +39,7 @@ stage.addEventListener('pointerup',end);stage.addEventListener('pointercancel',e
 $('next').addEventListener('click',()=>go(idx+1,1));$('prev').addEventListener('click',()=>go(idx-1,-1));
 document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')go(idx+1,1);else if(e.key==='ArrowLeft')go(idx-1,-1)});
 
-/* style and cast: ?style= and ?cast= win, then the book's own, then paper */
-{let q;try{q=new URLSearchParams(location.search)}catch(_){q=new URLSearchParams()}
-  STYLE=STYLES.includes(q.get('style'))?q.get('style'):BOOK.style;useCast(q.get('cast')||BOOK.cast);
-  try{document.documentElement.dataset.style=STYLE;document.documentElement.dataset.cast=CAST}catch(_){}}
-const start=d=>{idx=clamp((d&&d.idx)|0,0,SC.length-1);S={n:0};render(true)};
+/* ?page=N opens that page (the editor's preview uses it) */
+const start=d=>{idx=clamp((Q.has('page')?+Q.get('page'):(d&&d.idx))|0,0,SC.length-1);S={n:0};render(true)};
 try{window.claude?.hot?.snapshot?.(()=>({idx}))}catch(_){}
 window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});

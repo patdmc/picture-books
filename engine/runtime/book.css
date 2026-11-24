@@ -51,9 +51,7 @@ nav button:not(:disabled):active{transform:translateY(2px)}
 .pc{filter:drop-shadow(1.2px 2.2px 1.2px rgba(0,0,0,.3))}
 .t{font-family:var(--display); font-weight:700}
 .gloss{filter:none; opacity:.42; pointer-events:none}
-[data-style] .gloss{filter:none; stroke:none}
 .shadow{filter:none; opacity:.16}
-[data-style] .shadow{stroke:none}
 .mono{font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace; font-weight:500; white-space:pre; pointer-events:none}
 .t tspan{pointer-events:none}
 .hot{cursor:pointer; outline:none}
@@ -83,23 +81,23 @@ nav button:not(:disabled):active{transform:translateY(2px)}
 @keyframes blink{50%{opacity:0}}
 .blink{animation:blink 1.1s steps(1) infinite}
 
-/* ---------- styles: the same pieces in another medium. book.config.js style:, or ?style= on the URL ---------- */
-/* ink: coloured pen and ink with a wash, like a Sunday comic strip */
-[data-style="ink"] .art{filter:url(#wobble)}
-[data-style="ink"] .pc{filter:none; stroke:#1d1b19; stroke-width:2.4; stroke-linejoin:round; vector-effect:non-scaling-stroke}
-[data-style="ink"] .solid{filter:url(#outline)}      /* pieces that read as one shape (bubbles, clouds) get one outline round the whole */
-[data-style="ink"] .solid .pc{stroke:none}
-[data-style="ink"] .t{stroke:none; font-family:'Patrick Hand','Comic Neue','Comic Sans MS',cursive; font-weight:400; letter-spacing:.02em}
-/* felt: fuzzy fibre edges, threads through every piece, a stitched edge */
-[data-style="felt"] .art{filter:url(#fiber)}
-[data-style="felt"] .pc{filter:none; stroke:rgba(255,255,255,.55); stroke-width:3.2; stroke-dasharray:.5 6; stroke-linecap:round; vector-effect:non-scaling-stroke}
-[data-style="felt"] .t{stroke:none}
-
-/* macrame: knotted cord; shapes.js adds the knot layer and the fringe */
+/* ---------- styles: the same pieces in another medium ----------
+   Each piece carries its style as a class (st-ink…), set by shapes.js from STYLE as it draws.
+   The whole-scene filter comes from <html data-style>, or from a sty-* group made by as(). */
+.gloss,.shadow{stroke:none}
 .knot{pointer-events:none}
-[data-style="macrame"] .pc{stroke:rgba(0,0,0,.2); stroke-width:1.6; stroke-linejoin:round; vector-effect:non-scaling-stroke}
-[data-style="macrame"] .art{filter:url(#wobble)}
-[data-style="macrame"] .t{stroke:none}
+[data-style="ink"] .art,.sty-ink,[data-style="macrame"] .art,.sty-macrame{filter:url(#wobble)}
+[data-style="felt"] .art,.sty-felt{filter:url(#fiber)}
+/* ink: coloured pen and ink with a wash, like a Sunday comic strip */
+.pc.st-ink{filter:none; stroke:#1d1b19; stroke-width:2.4; stroke-linejoin:round; vector-effect:non-scaling-stroke}
+.solid.st-ink{filter:url(#outline)}      /* pieces that read as one shape (bubbles, clouds) get one outline round the whole */
+.solid.st-ink .pc{stroke:none}
+.t.st-ink{stroke:none; font-family:'Patrick Hand','Comic Neue','Comic Sans MS',cursive; font-weight:400; letter-spacing:.02em}
+/* felt: fuzzy fibre edges, threads through every piece, a stitched edge */
+.pc.st-felt{filter:none; stroke:rgba(255,255,255,.55); stroke-width:3.2; stroke-dasharray:.5 6; stroke-linecap:round; vector-effect:non-scaling-stroke}
+/* macrame: knotted cord; shapes.js adds the knot layer and the fringe */
+.pc.st-macrame{stroke:rgba(0,0,0,.2); stroke-width:1.6; stroke-linejoin:round; vector-effect:non-scaling-stroke}
+.t.st-felt,.t.st-macrame{stroke:none}
 
 /* cheat sheet: real commands, click to copy */
 #snips{list-style:none; margin:10px auto 6px; padding:0; max-width:640px; display:grid; gap:10px}

@@ -9,10 +9,12 @@ const h=(a,b,c)=>{const t=Math.sin(a*12.9898+b*78.233+c*37.719)*43758.5453;retur
 const f=n=>(+n).toFixed(1);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 /* macrame: every piece also gets a layer of knotted cord over its own colour (see #knots in shell.html) */
+/* the style a piece is drawn in rides on its own class (st-ink…), so one page can mix styles */
+const stc=()=>typeof STYLE!=='undefined'&&STYLE!=='paper'?' st-'+STYLE:'';
 const knotted=cls=>typeof STYLE!=='undefined'&&STYLE==='macrame'&&!/gloss|shadow/.test(cls);
 const span=pts=>{const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);return Math.max(Math.max(...xs)-Math.min(...xs),Math.max(...ys)-Math.min(...ys))};
 const poly=(pts,fill,cls='',extra='')=>{const P=pts.map(p=>f(p[0])+','+f(p[1])).join(' ');
-  return `<polygon class="pc ${cls}" points="${P}" fill="${fill}" ${extra}/>`+(knotted(cls)&&span(pts)>=20?`<polygon class="knot ${cls}" points="${P}" fill="url(#knots)"/>`:'')};
+  return `<polygon class="pc${stc()} ${cls}" points="${P}" fill="${fill}" ${extra}/>`+(knotted(cls)&&span(pts)>=20?`<polygon class="knot ${cls}" points="${P}" fill="url(#knots)"/>`:'')};
 function box0(x,y,w,hh,fill,cls='',extra=''){const J=Math.min(2.4,Math.min(w,hh)*.12);
   return poly([[x,y],[x+w,y],[x+w,y+hh],[x,y+hh]].map((p,i)=>[p[0]+h(x,y,i)*J,p[1]+h(y,w,i+4)*J]),fill,cls,extra)}
 /* macrame: a big piece hangs a fringe of loose cords from its bottom edge */
@@ -26,7 +28,7 @@ function strip(x1,y1,x2,y2,w,fill,cls=''){const dx=x2-x1,dy=y2-y1,l=Math.hypot(d
   return poly([[x1+nx,y1+ny],[x2+nx*.85,y2+ny*.85],[x2-nx,y2-ny],[x1-nx*.9,y1-ny*.9]],fill,cls)}
 function ribbon(pts,w,fill,cls=''){const up=[],dn=[];pts.forEach((p,i)=>{const a=pts[Math.max(0,i-1)],b=pts[Math.min(pts.length-1,i+1)],dx=b[0]-a[0],dy=b[1]-a[1],l=Math.hypot(dx,dy)||1,nx=-dy/l*w/2,ny=dx/l*w/2;up.push([p[0]+nx,p[1]+ny]);dn.unshift([p[0]-nx,p[1]-ny])});
   return poly(up.concat(dn),fill,cls)}
-const txt=(x,y,s,size,fill,anchor='middle',cls='')=>`<text class="pc t ${cls}" x="${x}" y="${y}" font-size="${size}" fill="${fill}" text-anchor="${anchor}">${s}</text>`;
+const txt=(x,y,s,size,fill,anchor='middle',cls='')=>`<text class="pc t${stc()} ${cls}" x="${x}" y="${y}" font-size="${size}" fill="${fill}" text-anchor="${anchor}">${s}</text>`;
 const line=(d)=>`<path d="${d}" fill="none" stroke="${C.ink}" stroke-width="3" stroke-linecap="round"/>`;
 const check=(x,y,s,col,cls='')=>strip(x-s*.5,y,x-s*.1,y+s*.42,s*.24,col,cls)+strip(x-s*.12,y+s*.42,x+s*.6,y-s*.5,s*.24,col,cls);
 let S={n:0};

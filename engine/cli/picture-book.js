@@ -14,7 +14,8 @@ const expr = p => read(p).trim().replace(/;\s*$/, '');           // a file holdi
 const evalFile = p => vm.runInNewContext('(' + expr(p) + '\n)', {}, { filename: p });
 const fill = (s, map) => Object.entries(map).reduce((a, [k, v]) => a.split('{{' + k + '}}').join(v), s);
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
-const die = m => { console.error('error: ' + m); process.exit(1); };
+class PBError extends Error {}
+const die = m => { throw new PBError(m); };   // the CLI prints it and exits; the editor shows it
 
 const FORMS = ['chain', 'recipe', 'journey', 'cumulative', 'call-response', 'fortunately', 'countdown'];   // see engine/docs/STORY.md
 const shelf = () => evalFile(path.join(BOOKS, 'shelf.js'));
@@ -50,7 +51,10 @@ const SKELETON = '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
 
 const bookBody = b => fill(read(path.join(ENG, 'runtime/shell.html')), { CSS: read(path.join(ENG, 'runtime/book.css')), JS: bookJs(b), TITLE: esc(b.config.title) });
 
-function check(slug) {
+function check(slug) { console.log(checkReport(slug)); }
+
+// Draws every page of a book in every style and cast; returns the report (ok or WARN lines). Throws on a broken page.
+function checkReport(slug) {
   const b = loadBook(slug), out = [];
   const el = () => new Proxy(function () {}, { get: (t, k) => k === 'querySelectorAll' ? () => [] : k === 'dataset' ? {} : el(), set: () => true, apply: () => el() });
   if (b.config.form && !FORMS.includes(b.config.form)) out.push(`WARN book.config.js: unknown form '${b.config.form}' (one of ${FORMS.join(', ')})`);
@@ -83,7 +87,7 @@ __out.push('ok: '+SC.length+' spreads (cover + '+(SC.length-1)+' pages), styles:
   if (shown.size && !sheet.length) out.unshift(`WARN the art types ${shown.size} command(s) but the book has no cheat sheet (new ${slug} cheat-sheet --sheet)`);
   else for (const [c, where] of shown) if (!sheet.includes(c.trim())) out.unshift(`WARN ${where}: "${c}" is typed in the art but missing from the cheat sheet`);
   for (const u of b.unused) out.unshift(`WARN pages/${u} exists but is not in cut.js`);
-  console.log(`${slug}\n  ` + [...new Set(out)].join('\n  '));
+  return `${slug}\n  ` + [...new Set(out)].join('\n  ');
 }
 
 function build(args) {
@@ -116,19 +120,23 @@ function contact(args) {
   const opt = k => { const i = args.indexOf('--' + k); return i >= 0 ? args[i + 1] : null; };
   const slug = args.find((a, i) => !a.startsWith('--') && !(i && args[i - 1].startsWith('--')));
   if (!slug) die('usage: picture-book contact <slug> [--taps N]');
-  const taps = +(opt('taps') ?? 9), b = loadBook(slug);
+  const taps = +(opt('taps') ?? 9);
+  const out = path.join(SITE, slug, `contact-${taps}.html`);
+  write(out, contactHtml(slug, taps));
+  console.log(path.relative(ROOT, out) + '   (add ?style=ink&cast=toys to compare)');
+}
+function contactHtml(slug, taps = 9) {
+  const b = loadBook(slug);
   const grid = `<script>
 document.querySelector('.desk').hidden=true;
 const g=document.createElement('div');g.className='contact';
-SC.forEach((sc,i)=>{S={n:${taps}};const d=document.createElement('figure');
-  d.innerHTML='<svg viewBox="0 0 800 500"><rect width="800" height="500" fill="'+sc.bg+'"/><g class="art">'+sc.draw.call(sc,S)+'</g></svg>';
+SC.forEach((sc,i)=>{S={n:${taps}};dress(sc);const d=document.createElement('figure');
+  d.innerHTML='<svg viewBox="0 0 800 500"><rect width="800" height="500" fill="'+sc.bg+'"/><g class="sty-'+STYLE+'">'+sc.draw.call(sc,S)+'</g></svg>';
   const c=document.createElement('figcaption');c.textContent=i+' '+sc.name+': '+sc.cap;d.appendChild(c);g.appendChild(d)});
 document.body.appendChild(g);
 </script><style>.contact{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:12px;padding:12px}
 .contact figure{margin:0;background:var(--paper);color:var(--ink)}.contact svg{display:block;width:100%}.contact figcaption{padding:4px 8px;font-size:13px}</style>`;
-  const out = path.join(SITE, slug, `contact-${taps}.html`);
-  write(out, fill(SKELETON, { BODY: bookBody(b) }).replace('</body>', grid + '</body>'));
-  console.log(path.relative(ROOT, out) + '   (add ?style=ink&cast=toys to compare)');
+  return fill(SKELETON, { BODY: bookBody(b) }).replace('</body>', grid + '</body>');
 }
 
 function copyDir(from, to, map) {
@@ -156,10 +164,20 @@ function newPage(args) {
   console.log(`books/${slug}/pages/${page}/ created. Add '${page}' to books/${slug}/cut.js where it belongs in the story.`);
 }
 
-const [cmd, ...args] = process.argv.slice(2);
-if (cmd === 'build') build(args);
-else if (cmd === 'check') slugs(args).forEach(check);
-else if (cmd === 'init') init(args);
-else if (cmd === 'contact') contact(args);
-else if (cmd === 'new') newPage(args);
-else { console.log('usage: picture-book <init <slug> "<Title>" | new <slug> <page> [--sheet] | build [slug...|--all] [--artifact|--pages] | check [slug...|--all] | contact <slug> [--taps N]>'); process.exit(cmd ? 1 : 0); }
+module.exports = { contactHtml, ROOT, BOOKS, FORMS, PBError, loadBook, bookBody, checkReport, init, newPage, shelf, fill, SKELETON, evalFile };
+
+if (require.main === module) {
+  const [cmd, ...args] = process.argv.slice(2);
+  try {
+    if (cmd === 'build') build(args);
+    else if (cmd === 'check') slugs(args).forEach(check);
+    else if (cmd === 'init') init(args);
+    else if (cmd === 'contact') contact(args);
+    else if (cmd === 'edit') require('../editor/server.js').serve(args);
+    else if (cmd === 'new') newPage(args);
+    else { console.log('usage: picture-book <init <slug> "<Title>" | new <slug> <page> [--sheet] | build [slug...|--all] [--artifact|--pages] | check [slug...|--all] | contact <slug> [--taps N]>'); process.exit(cmd ? 1 : 0); }
+  } catch (e) {
+    console.error('error: ' + (e instanceof PBError ? e.message : (e.stack || e)));
+    process.exit(1);
+  }
+}

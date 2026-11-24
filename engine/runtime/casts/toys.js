@@ -43,7 +43,7 @@ CASTS.toys={
     else g+=strip(-27,-44,-13,-44,3,C.ink)+strip(13,-44,27,-44,3,C.ink);
     return `<g transform="translate(${x},${y}) scale(${s})" ${o.cls?`class="${o.cls}"`:''}>${g}</g>`},
   /* The remote: a cotton-wool cloud on a stick, with a wooden sign. */
-  cloud(x,y,cls=''){let g=strip(x,y+40,x,y+150,6,WOOD2)+'<g class="solid">';
+  cloud(x,y,cls=''){let g=strip(x,y+40,x,y+150,6,WOOD2)+`<g class="solid${stc()}">`;
     [[-56,8,26],[-30,-14,30],[4,-26,34],[38,-12,30],[60,10,24],[-20,14,30],[22,14,30]].forEach(([a,b,r])=>g+=circ(x+a,y+b,r,C.white));
     return `<g class="${cls}">`+g+'</g>'+box(x-50,y+28,100,32,WOOD)+txt(x,y+51,'origin',22,C.ink)+'</g>'},
 };

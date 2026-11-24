@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Picture Book Editor</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Fredoka:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --mat:#2f7566; --mat-line:rgba(255,255,255,.13); --on-mat:#f3f0e4; --on-mat-dim:#bcd8cd;
+  --paper:#f8f4ea; --paper-2:#efe8d8; --ink:#2b2a28; --ink-dim:#6b675f; --accent:#f5c542; --red:#c4161c; --green:#4c9a52;
+  --shadow:rgba(0,0,0,.28); --code-bg:#22211f; --code-ink:#e9e4d6;
+  --display:'Fredoka','Trebuchet MS',sans-serif; --body:'Andika','Trebuchet MS',Verdana,sans-serif; --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --mat:#16332d; --mat-line:rgba(255,255,255,.07); --on-mat:#ece8da; --on-mat-dim:#9fbdb2; --paper:#ece6d6; --paper-2:#ddd5c2; --shadow:rgba(0,0,0,.5)}}
+:root[data-theme="dark"]{--mat:#16332d; --mat-line:rgba(255,255,255,.07); --on-mat:#ece8da; --on-mat-dim:#9fbdb2; --paper:#ece6d6; --paper-2:#ddd5c2; --shadow:rgba(0,0,0,.5)}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--mat);background-image:linear-gradient(var(--mat-line) 1px,transparent 1px),linear-gradient(90deg,var(--mat-line) 1px,transparent 1px);
+  background-size:32px 32px;color:var(--on-mat);font:15px/1.4 var(--body);display:flex;flex-direction:column}
+button,select,input,textarea{font:inherit;color:inherit}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:12px 16px}
+h1{font:700 1.35rem var(--display);margin:0 12px 0 0;letter-spacing:.01em}
+label.sel{display:flex;align-items:center;gap:6px;font:500 .85rem var(--display);color:var(--on-mat-dim)}
+select{background:var(--paper);color:var(--ink);border:0;padding:6px 8px;font:600 .9rem var(--display);clip-path:polygon(2% 6%,98% 2%,99% 94%,1% 98%)}
+.btn{border:0;cursor:pointer;padding:7px 14px;background:var(--accent);color:var(--ink);font:600 .9rem var(--display);clip-path:polygon(3% 8%,97% 3%,98% 92%,2% 97%)}
+.btn.quiet{background:var(--paper-2)}
+.btn.red{background:#e7a19c}
+.btn:focus-visible,select:focus-visible{outline:3px solid var(--on-mat);outline-offset:2px;clip-path:none}
+.btn:disabled{opacity:.45;cursor:default}
+#status{margin-left:auto;font:500 .85rem var(--display);padding:5px 10px;background:rgba(0,0,0,.18);max-width:42ch;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#status.ok{background:rgba(169,203,79,.3)} #status.warn{background:rgba(245,197,66,.3)} #status.bad{background:rgba(213,67,60,.45)}
+main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(300px,360px) minmax(0,1fr) minmax(280px,340px);gap:14px;padding:0 16px 16px}
+.card{background:var(--paper);color:var(--ink);box-shadow:0 2px 0 rgba(0,0,0,.08),0 10px 24px var(--shadow);display:flex;flex-direction:column;min-height:0}
+.card h2{font:700 1.05rem var(--display);margin:0;padding:12px 14px 8px;display:flex;align-items:center;gap:8px}
+.card h2 small{font:500 .8rem var(--body);color:var(--ink-dim)}
+/* script column */
+#script{overflow:auto;padding:0 10px 10px;flex:1}
+.row{display:grid;grid-template-columns:22px 1fr;gap:4px 8px;padding:8px;margin-bottom:6px;background:var(--paper-2);border-left:5px solid transparent;cursor:pointer}
+.row.on{border-left-color:var(--red);background:#fff8e6}
+.row.drag{opacity:.4} .row.over{box-shadow:inset 0 3px 0 var(--red)}
+.grip{grid-row:1 / span 3;cursor:grab;color:var(--ink-dim);font:700 1rem var(--mono);user-select:none;display:flex;flex-direction:column;align-items:center;gap:2px}
+.grip button{border:0;background:none;cursor:pointer;color:var(--ink-dim);padding:0;font-size:.75rem;line-height:1}
+.grip button:focus-visible{outline:2px solid var(--red)}
+.meta{display:flex;gap:8px;align-items:baseline;font:600 .8rem var(--display);color:var(--ink-dim)}
+.meta .x{margin-left:auto;border:0;background:none;cursor:pointer;color:var(--ink-dim);font-size:.8rem}
+.row textarea,.row input{width:100%;border:0;background:transparent;resize:none;padding:2px 0;outline:none}
+.row textarea{font:1rem/1.35 var(--body);field-sizing:content;min-height:1.4em}
+.row input{font:.85rem var(--display);color:var(--ink-dim)}
+.row textarea:focus,.row input:focus{background:#fff;box-shadow:0 0 0 2px #fff}
+#addpage{display:flex;gap:6px;padding:10px;border-top:1px dashed #cfc6b2}
+#addpage input{flex:1;min-width:0;border:0;background:#fff;padding:6px 8px;font:.9rem var(--mono)}
+/* preview + code */
+#mid{display:flex;flex-direction:column;gap:14px;min-height:0}
+#pv{flex:1.25;min-height:320px;padding:0}
+#pv iframe{flex:1;width:100%;border:0;background:var(--mat)}
+#code{flex:1;min-height:220px}
+.tabs{display:flex;gap:4px;padding:0 10px}
+.tab{border:0;cursor:pointer;padding:6px 12px;background:var(--paper-2);font:600 .85rem var(--display)}
+.tab[aria-selected="true"]{background:var(--code-bg);color:var(--code-ink)}
+#src{flex:1;min-height:0;width:100%;resize:none;border:0;padding:12px 14px;background:var(--code-bg);color:var(--code-ink);font:13.5px/1.55 var(--mono);tab-size:2;outline:none;white-space:pre;overflow:auto}
+.codebar{display:flex;gap:8px;align-items:center;padding:8px 10px;background:var(--code-bg)}
+.codebar span{color:#9c978a;font:.8rem var(--mono);margin-right:auto}
+#report{margin:0;max-height:7.5em;overflow:auto;padding:8px 12px;font:12px/1.45 var(--mono);background:#191817;color:#cfe3a0;white-space:pre-wrap}
+#report.bad{color:#f2a49e}
+/* Claude */
+#log{flex:1;overflow:auto;padding:4px 12px 10px;display:flex;flex-direction:column;gap:8px}
+.msg{padding:8px 10px;background:var(--paper-2);white-space:pre-wrap;font-size:.92rem}
+.msg.me{background:#fff3c9;align-self:flex-end;max-width:92%}
+.msg.tool{background:none;padding:0 2px;font:.78rem var(--mono);color:var(--ink-dim)}
+.msg.done{border-left:4px solid var(--green)} .msg.err{border-left:4px solid var(--red)}
+.empty{color:var(--ink-dim);font-size:.9rem;padding:4px 2px}
+#ask{display:flex;flex-direction:column;gap:8px;padding:10px;border-top:1px dashed #cfc6b2}
+#ask textarea{width:100%;min-height:96px;border:0;background:#fff;padding:8px 10px;resize:vertical;font:.95rem/1.4 var(--body)}
+#ask .line{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#ask label{font:.82rem var(--body);color:var(--ink-dim);display:flex;gap:5px;align-items:center;margin-right:auto}
+@media (max-width:1100px){main{grid-template-columns:1fr;overflow:auto}#pv{min-height:480px}#code{min-height:360px}.card{max-height:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Picture Book Editor</h1>
+  <label class="sel">Book <select id="book"></select></label>
+  <label class="sel">Style <select id="style"><option value="">book’s own</option><option>paper</option><option>ink</option><option>felt</option><option>macrame</option><option>embroidery</option></select></label>
+  <label class="sel">Cast <select id="cast"><option value="">book’s own</option><option>paper</option><option>toys</option></select></label>
+  <button class="btn quiet" id="contact" type="button">All pages</button>
+  <button class="btn quiet" id="newbook" type="button">New book</button>
+  <div id="status" role="status">Loading…</div>
+</header>
+<main>
+  <section class="card" aria-labelledby="h-script">
+    <h2 id="h-script">Script <small>drag to reorder · edit words in place</small></h2>
+    <div id="script"></div>
+    <form id="addpage"><input id="pname" placeholder="new-page-name" aria-label="New page name" pattern="[a-z0-9][a-z0-9-]*"><button class="btn" type="submit">Add after this page</button></form>
+  </section>
+  <div id="mid">
+    <section class="card" id="pv" aria-label="Preview"><iframe id="frame" title="Page preview"></iframe></section>
+    <section class="card" id="code" aria-label="Page source">
+      <h2><span id="pagename">page</span> <small>the page’s two files</small></h2>
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" id="t-lines" aria-selected="true" type="button">words · lines.js</button>
+        <button class="tab" role="tab" id="t-scene" aria-selected="false" type="button">picture · scene.js</button>
+      </div>
+      <textarea id="src" spellcheck="false" aria-label="Source"></textarea>
+      <div class="codebar"><span id="dirty">saved</span><button class="btn quiet" id="revert" type="button">Revert</button><button class="btn" id="save" type="button">Save ⌘S</button></div>
+      <pre id="report"></pre>
+    </section>
+  </div>
+  <section class="card" aria-labelledby="h-claude">
+    <h2 id="h-claude">Ask Claude <small>runs Claude Code here</small></h2>
+    <div id="log" aria-live="polite"><p class="empty">Say what to change in your own words: “make the robot look worried on this page”, “swap pages 4 and 5 and fix the lines so they still chain”, “add a page where the friend pushes too”. Claude edits the files, runs the check, and the preview reloads.</p></div>
+    <form id="ask">
+      <textarea id="dir" placeholder="What should change?" aria-label="Direction for Claude"></textarea>
+      <div class="line">
+        <label><input type="checkbox" id="thispage" checked> about this page</label>
+        <button class="btn quiet" type="button" id="fresh" title="Start a new conversation">New chat</button>
+        <button class="btn red" type="button" id="stop" disabled>Stop</button>
+        <button class="btn" type="submit" id="send">Send</button>
+      </div>
+    </form>
+  </section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const st={books:[],book:null,page:0,tab:'lines',files:{lines:'',scene:''},session:null,busy:false};
+const api=async(url,body)=>{const r=await fetch(url,body?{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)}:{});
+  const j=await r.json().catch(()=>({error:'bad response'}));if(!r.ok)throw new Error(j.error||r.statusText);return j};
+const cur=()=>st.books.find(b=>b.slug===st.book);
+const pageName=()=>cur()?.pages[st.page]?.name;
+function status(t,cls=''){const s=$('status');s.textContent=t;s.className=cls;s.title=t}
+function showReport(r){$('report').textContent=r.report;$('report').className=r.ok?'':'bad';
+  const warns=(r.report.match(/WARN/g)||[]).length;status(!r.ok?'Check failed: '+r.report.split('\n').pop():warns?warns+' warning'+(warns>1?'s':''):'Check: ok',!r.ok?'bad':warns?'warn':'ok')}
+
+async function loadBooks(keep){st.books=await api('/api/books');const sel=$('book');
+  sel.innerHTML=st.books.map(b=>`<option value="${b.slug}">${esc(b.title)}</option>`).join('');
+  if(!keep||!cur()){const saved=localGet('book');st.book=st.books.some(b=>b.slug===saved)?saved:st.books[0]?.slug}
+  sel.value=st.book;st.page=Math.min(st.page,(cur()?.pages.length||1)-1);drawScript()}
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+const localGet=k=>{try{return localStorage.getItem('pbed.'+k)}catch(_){return null}};
+const localSet=(k,v)=>{try{localStorage.setItem('pbed.'+k,v)}catch(_){}};
+
+/* ---------- script column: words in place, drag or arrow to reorder ---------- */
+function drawScript(){const b=cur();if(!b)return;const box=$('script');
+  box.innerHTML=b.pages.map((p,i)=>`<div class="row${i===st.page?' on':''}" draggable="true" data-i="${i}">
+    <div class="grip" aria-hidden="false"><button type="button" data-mv="-1" aria-label="Move ${p.name} up">▲</button>⋮⋮<button type="button" data-mv="1" aria-label="Move ${p.name} down">▼</button></div>
+    <div class="meta">${i?'page '+i:'cover'} · ${p.name}${i?`<button class="x" type="button" data-rm="1" title="Remove from the book (the folder stays)">remove</button>`:''}</div>
+    <textarea data-f="cap" rows="1" aria-label="Caption for ${p.name}">${esc(p.cap)}</textarea>
+    <input data-f="hint" value="${esc(p.hint)}" aria-label="Hint for ${p.name}">
+  </div>`).join('');
+  box.querySelectorAll('.row').forEach(row=>{const i=+row.dataset.i;
+    row.addEventListener('click',e=>{if(e.target.closest('button,textarea,input'))return;select(i)});
+    row.querySelectorAll('textarea,input').forEach(el=>{el.addEventListener('focus',()=>{if(st.page!==i)select(i,true)});
+      el.addEventListener('change',()=>saveField(i,el.dataset.f,el.value));
+      el.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();el.blur()}})});
+    row.querySelectorAll('[data-mv]').forEach(btn=>btn.addEventListener('click',()=>move(i,i+ +btn.dataset.mv)));
+    row.querySelector('[data-rm]')?.addEventListener('click',()=>removePage(i));
+    row.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',i);row.classList.add('drag')});
+    row.addEventListener('dragend',()=>row.classList.remove('drag'));
+    row.addEventListener('dragover',e=>{e.preventDefault();row.classList.add('over')});
+    row.addEventListener('dragleave',()=>row.classList.remove('over'));
+    row.addEventListener('drop',e=>{e.preventDefault();row.classList.remove('over');move(+e.dataTransfer.getData('text/plain'),i)})})}
+async function move(from,to){const b=cur();if(to<0||to>=b.pages.length||from===to)return;
+  const order=b.pages.map(p=>p.name),[p]=order.splice(from,1);order.splice(to,0,p);
+  try{showReport(await api('/api/order',{book:st.book,pages:order}));st.page=to;await loadBooks(true);await select(to)}catch(e){status(e.message,'bad')}}
+async function saveField(i,field,value){const b=cur();
+  try{showReport(await api('/api/field',{book:st.book,page:b.pages[i].name,field,value}));b.pages[i][field]=value;if(i===st.page){await loadFiles();preview()}}catch(e){status(e.message,'bad')}}
+async function removePage(i){const b=cur();if(!confirm(`Take “${b.pages[i].name}” out of the book? Its folder stays on disk.`))return;
+  try{showReport(await api('/api/remove-page',{book:st.book,page:b.pages[i].name}));st.page=Math.max(0,i-1);await loadBooks(true);await select(st.page)}catch(e){status(e.message,'bad')}}
+$('addpage').addEventListener('submit',async e=>{e.preventDefault();const name=$('pname').value.trim();if(!name)return;
+  try{showReport(await api('/api/new-page',{book:st.book,name,at:st.page+1}));$('pname').value='';await loadBooks(true);await select(st.page+1)}catch(err){status(err.message,'bad')}});
+
+/* ---------- preview + code ---------- */
+function preview(){const q=new URLSearchParams({page:st.page,t:Date.now()});if($('style').value)q.set('style',$('style').value);if($('cast').value)q.set('cast',$('cast').value);
+  $('frame').src=`/preview/${st.book}/?${q}`}
+async function select(i,keepFocus){st.page=i;document.querySelectorAll('.row').forEach(r=>r.classList.toggle('on',+r.dataset.i===i));
+  $('pagename').textContent=pageName();preview();await loadFiles()}
+async function loadFiles(){if(isDirty()&&!confirm('Discard unsaved changes to this page’s files?'))return;
+  st.files=await api(`/api/page?book=${st.book}&page=${pageName()}`);showTab()}
+const isDirty=()=>$('src').value!==st.files[st.tab]&&st.files[st.tab]!=='';
+function showTab(){$('t-lines').setAttribute('aria-selected',st.tab==='lines');$('t-scene').setAttribute('aria-selected',st.tab==='scene');$('src').value=st.files[st.tab];$('dirty').textContent='saved'}
+for(const t of ['lines','scene'])$('t-'+t).addEventListener('click',()=>{if(t===st.tab||isDirty()&&!confirm('Discard unsaved changes?'))return;st.tab=t;showTab()});
+$('src').addEventListener('input',()=>$('dirty').textContent='unsaved changes');
+$('src').addEventListener('keydown',e=>{if(e.key==='Tab'){e.preventDefault();document.execCommand('insertText',false,'  ')}});
+async function save(){try{const r=await api('/api/page',{book:st.book,page:pageName(),[st.tab]:$('src').value});st.files[st.tab]=$('src').value;$('dirty').textContent='saved';showReport(r);
+  await loadBooks(true);preview()}catch(e){status(e.message,'bad')}}
+$('save').addEventListener('click',save);$('revert').addEventListener('click',showTab);
+document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key==='s'){e.preventDefault();save()}});
+$('book').addEventListener('change',async()=>{st.book=$('book').value;localSet('book',st.book);st.page=0;st.session=null;drawScript();await select(0);showReport(await api('/api/check?book='+st.book))});
+$('style').addEventListener('change',preview);$('cast').addEventListener('change',preview);
+$('contact').addEventListener('click',()=>{const q=new URLSearchParams();if($('style').value)q.set('style',$('style').value);if($('cast').value)q.set('cast',$('cast').value);
+  window.open(`/contact/${st.book}/?${q}`,'_blank')});
+$('newbook').addEventListener('click',async()=>{const title=prompt('Title for the new book','If You Give a Dev a …');if(!title)return;
+  const slug=prompt('Folder name (lowercase-with-dashes)',title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40));if(!slug)return;
+  try{showReport(await api('/api/new-book',{book:slug,title}));localSet('book',slug);await loadBooks();await select(0)}catch(e){status(e.message,'bad')}});
+
+/* ---------- Claude ---------- */
+function say(cls,text){const d=document.createElement('div');d.className='msg '+cls;d.textContent=text;$('log').querySelector('.empty')?.remove();$('log').appendChild(d);$('log').scrollTop=1e9;return d}
+function busy(on){st.busy=on;$('send').disabled=on;$('stop').disabled=!on;$('dir').disabled=on;if(on)status('Claude is working…','warn')}
+$('ask').addEventListener('submit',async e=>{e.preventDefault();const direction=$('dir').value.trim();if(!direction||st.busy)return;
+  say('me',direction);$('dir').value='';busy(true);
+  try{const r=await fetch('/api/claude',{method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({book:st.book,page:$('thispage').checked?pageName():null,direction,session:st.session})});
+    if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.error||r.statusText)}
+    const rd=r.body.getReader(),dec=new TextDecoder();let buf='';
+    for(;;){const {value,done}=await rd.read();if(done)break;buf+=dec.decode(value,{stream:true});let i;
+      while((i=buf.indexOf('\n'))>=0){const line=buf.slice(0,i);buf=buf.slice(i+1);if(!line.trim())continue;const m=JSON.parse(line);
+        if(m.kind==='session')st.session=m.session;
+        else if(m.kind==='text')say('',m.text);
+        else if(m.kind==='tool')say('tool','› '+m.name+(m.detail?' '+m.detail:''));
+        else if(m.kind==='done'){if(m.session)st.session=m.session;if(m.error)say('err',m.text||'Claude stopped with an error.')}
+        else if(m.kind==='error')say('err',m.text);
+        else if(m.kind==='exit'&&m.code)say('err','claude exited with code '+m.code)}}
+  }catch(err){say('err',err.message)}
+  busy(false);const p=pageName();await loadBooks(true);const i=cur().pages.findIndex(x=>x.name===p);st.files={lines:'',scene:''};await select(i>=0?i:st.page);
+  showReport(await api('/api/check?book='+st.book))});
+$('dir').addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key==='Enter')$('ask').requestSubmit()});
+$('stop').addEventListener('click',()=>api('/api/claude/stop',{}).catch(()=>{}));
+$('fresh').addEventListener('click',()=>{st.session=null;$('log').innerHTML='<p class="empty">New conversation. Claude won’t remember the earlier one.</p>'});
+
+(async()=>{try{await loadBooks();await select(0);showReport(await api('/api/check?book='+st.book))}catch(e){status(e.message,'bad')}})();
+</script>
+</body>
+</html>

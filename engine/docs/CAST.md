@@ -107,6 +107,8 @@ Two settings in `book.config.js`, both overridable on the URL for comparing (`?s
 | `style` | how every shape is drawn: outlines, texture, shadows, lettering. CSS and SVG filters in `book.css` and `shell.html`. | `paper` (cut paper), `ink` (coloured pen and ink with a wash), `felt` (fuzzy fibre, stitched edges), `macrame` (knotted cord over each piece's colour, fringe on big pieces) |
 | `cast` | who plays each role. A file in `engine/runtime/casts/` that registers replacements in `CASTS`. | `paper` (paper people), `toys` (peg dolls, a tin wind-up robot, a toy chest, a bouncy ball, a cotton-wool cloud) |
 
+- A page can set its own `style:` and `cast:` in `scene.js`; the URL still wins.
+- `as(style, cast, () => ...)` draws part of a scene in another style and cast, so one page can mix them (each piece carries its style as an `st-*` class).
 - A cast replaces role helpers (`dev`, `face`, `agent`, `metric`, `repo`, `cloud`, `photo`, `rocket`, `book`) with the **same arguments, feet point and height**. Scenes never check which cast is playing.
 - A new role helper that a cast might replace → add it to `ROLES` and `useCast()` at the end of `cast.js`.
 - Pieces that should read as one shape in `ink` (a bubble and its tail, a cloud) go inside `<g class="solid">`, which gets one outline round the whole group.
