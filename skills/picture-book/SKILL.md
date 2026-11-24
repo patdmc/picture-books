@@ -15,13 +15,13 @@ Read before writing: `engine/docs/STORY.md`, `engine/docs/CAST.md`, `engine/docs
 ## Workflow
 
 1. **Source.** Pasted text → use it. Artifact link → `Artifact` action `read`; extract the argument in order. Someone else's source → say so in the plan.
-2. **Plan + draft chain, then stop.** Show: title, the numbered lines, how it could look (cast, recurring props), decisions for the author. Wait for approval.
+2. **Plan + draft, then stop.** Name the form (`engine/docs/STORY.md`, **Forms**) and why it fits. Show: title, the numbered lines, any bubble lines and terminal commands per page, how it could look (cast, recurring props), decisions for the author. A how-to book → confirm every Claude Code command or path against current docs first. Wait for approval.
 3. **Words pass.** Any edit to the author's own lines → run the `writing` skill, suggest, apply only what they pick.
-4. **Create.** `node engine/cli/picture-book.js init <slug> "<Title>"`, then `new <slug> <page>` per line. Name pages by what happens (`thresholds`, `pile-up`), never by number.
+4. **Create.** `node engine/cli/picture-book.js init <slug> "<Title>"`, set `form` (and `series`) in `book.config.js`, then `new <slug> <page>` per line; a how-to book ends with `new <slug> cheat-sheet --sheet`. Name pages by what happens (`thresholds`, `pile-up`), never by number.
 5. **Write.** `lines.js` and `scene.js` per page; the order in `cut.js`; book-only shapes in `helpers.js`.
 6. **Check.** `node engine/cli/picture-book.js check <slug>` → must print `ok`. Fix errors; read every WARN.
 7. **Publish a draft.** `build <slug> --artifact` → publish `out/<slug>.html` with the `Artifact` tool. Private until the author shares it.
-8. **Report.** Link, what each page does, every word in the art that is not in the story, and that the render is unverified unless someone looked.
+8. **Report.** Link, what each page does, every word in the art that is not in the story (bubble words and terminal lines listed separately), and that the render is unverified unless someone looked.
 9. **Shelve.** Author happy → add the slug to `books/shelf.js`, fill `tag`, `swatch`, `blurb` in `book.config.js`, run `build --all --root`, commit sources and built pages together. Ask before pushing; a push to `main` deploys the public site.
 
 ## Out of scope

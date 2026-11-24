@@ -15,6 +15,7 @@ const fill = (s, map) => Object.entries(map).reduce((a, [k, v]) => a.split('{{' 
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
 const die = m => { console.error('error: ' + m); process.exit(1); };
 
+const FORMS = ['chain', 'recipe', 'journey', 'cumulative', 'call-response', 'fortunately', 'countdown'];   // see engine/docs/STORY.md
 const shelf = () => evalFile(path.join(BOOKS, 'shelf.js'));
 const slugs = args => (args.length && !args.includes('--all') ? args : shelf());
 
@@ -50,11 +51,17 @@ const bookBody = b => fill(read(path.join(ENG, 'runtime/shell.html')), { CSS: re
 function check(slug) {
   const b = loadBook(slug), out = [];
   const el = () => new Proxy(function () {}, { get: (t, k) => k === 'querySelectorAll' ? () => [] : k === 'dataset' ? {} : el(), set: () => true, apply: () => el() });
-  const ctx = { document: { getElementById: el, addEventListener() {} }, window: {}, setTimeout() {}, clearTimeout() {}, console, __out: out };
+  if (b.config.form && !FORMS.includes(b.config.form)) out.push(`WARN book.config.js: unknown form '${b.config.form}' (one of ${FORMS.join(', ')})`);
+  let at = '';
+  const shown = new Map();   // command typed in a term() -> first page that shows it
+  const ctx = { document: { getElementById: el, addEventListener() {}, createElement: el }, window: {}, setTimeout() {}, clearTimeout() {}, console, __out: out,
+    __warn: m => out.push(`WARN ${at}: ${m}`), __cmd: c => { if (!shown.has(c)) shown.set(c, at); }, __setAt: a => { at = a; } };
   vm.createContext(ctx);
   vm.runInContext(bookJs(b) + `;
 const __lum=c=>{const h=/^#([0-9a-f]{6})$/i.exec(c);if(!h)return 1;const n=parseInt(h[1],16);return(.299*(n>>16)+.587*((n>>8)&255)+.114*(n&255))/255};
-SC.forEach((sc,i)=>{const at='page '+i+' ('+sc.name+')';
+SC.forEach((sc,i)=>{const at='page '+i+' ('+sc.name+')';__setAt(at);
+  if('commands' in sc){if(!Array.isArray(sc.commands)||!sc.commands.length)throw new Error(at+': a cheat sheet needs at least one entry in commands');
+    sc.commands.forEach((c,j)=>{if(!c||typeof c.cmd!=='string'||!c.cmd.trim())throw new Error(at+': commands['+j+'] has no cmd')})}
   for(const k of ['bg','cap','hint','draw'])if(!sc[k])__out.push('WARN '+at+': missing '+k);
   if(__lum(sc.bg)<.7&&!sc.dark)__out.push('WARN '+at+': background '+sc.bg+' is dark; use a pale P.* colour or set dark:true');
   if(/\\u2014/.test(sc.cap||''))__out.push('WARN '+at+': em dash in the caption');
@@ -64,7 +71,11 @@ SC.forEach((sc,i)=>{const at='page '+i+' ('+sc.name+')';
     if(/data-tap/.test(s))tappable=true;}
   if(!tappable)__out.push('WARN '+at+': nothing to tap');
 });
+__setAt('');globalThis.__sheet=SC.flatMap(sc=>(sc.commands||[]).map(c=>c.cmd.trim()));
 __out.push('ok: '+SC.length+' spreads (cover + '+(SC.length-1)+' pages)');`, ctx, { filename: `books/${slug}` });
+  const sheet = ctx.__sheet;
+  if (shown.size && !sheet.length) out.unshift(`WARN the art types ${shown.size} command(s) but the book has no cheat sheet (new ${slug} cheat-sheet --sheet)`);
+  else for (const [c, where] of shown) if (!sheet.includes(c.trim())) out.unshift(`WARN ${where}: "${c}" is typed in the art but missing from the cheat sheet`);
   for (const u of b.unused) out.unshift(`WARN pages/${u} exists but is not in cut.js`);
   console.log(`${slug}\n  ` + [...new Set(out)].join('\n  '));
 }
@@ -81,9 +92,14 @@ function build(args) {
     console.log(`${label}${slug}/index.html`);
   }
   if (artifact) return;
-  const cards = shelf().map(s => { const c = evalFile(path.join(BOOKS, s, 'book.config.js'));
-    return `    <li><a href="${s}/">\n      <div class="swatch" style="background:${esc(c.swatch || '#a9d5e8')}">${esc(c.tag || '')}</div>\n      <h2>${esc(c.title)}</h2>\n      <p>${esc(c.blurb || '')}</p></a></li>`; }).join('\n');
-  write(path.join(dest, 'index.html'), fill(read(path.join(ENG, 'site/index.html')), { CARDS: cards }));
+  // One shelf per series, in the order the series first appears in shelf.js; books with no series come first, unlabelled.
+  const shelves = new Map();
+  for (const s of shelf()) { const c = evalFile(path.join(BOOKS, s, 'book.config.js')), k = c.series || '';
+    if (!shelves.has(k)) shelves.set(k, []);
+    shelves.get(k).push(`    <li><a href="${s}/">\n      <div class="swatch" style="background:${esc(c.swatch || '#a9d5e8')}">${esc(c.tag || '')}</div>\n      <h2>${esc(c.title)}</h2>\n      <p>${esc(c.blurb || '')}</p></a></li>`); }
+  const order = [...shelves.keys()].sort((a, b) => (a ? 1 : 0) - (b ? 1 : 0));
+  const html = order.map(k => (k ? `  <h2 class="series">${esc(k)}</h2>\n` : '') + `  <ul>\n${shelves.get(k).join('\n')}\n  </ul>`).join('\n');
+  write(path.join(dest, 'index.html'), fill(read(path.join(ENG, 'site/index.html')), { SHELVES: html }));
   if (root) write(path.join(dest, '.nojekyll'), '');
   console.log(label + 'index.html');
 }
@@ -103,12 +119,13 @@ function init([slug, title]) {
   console.log(`books/${slug}/ created. Add '${slug}' to books/shelf.js when it is ready to appear on the site.`);
 }
 
-function newPage([slug, page]) {
-  if (!slug || !page) die('usage: picture-book new <slug> <page>');
+function newPage(args) {
+  const [slug, page] = args.filter(a => !a.startsWith('--')), sheet = args.includes('--sheet');
+  if (!slug || !page) die('usage: picture-book new <slug> <page> [--sheet]');
   const dir = path.join(BOOKS, slug, 'pages', page);
   if (!fs.existsSync(path.join(BOOKS, slug))) die(`no book at books/${slug}`);
   if (fs.existsSync(dir)) die(`books/${slug}/pages/${page} already exists`);
-  copyDir(path.join(ENG, 'template/page'), dir, {});
+  copyDir(path.join(ENG, sheet ? 'template/sheet' : 'template/page'), dir, {});
   console.log(`books/${slug}/pages/${page}/ created. Add '${page}' to books/${slug}/cut.js where it belongs in the story.`);
 }
 
@@ -117,4 +134,4 @@ if (cmd === 'build') build(args);
 else if (cmd === 'check') slugs(args).forEach(check);
 else if (cmd === 'init') init(args);
 else if (cmd === 'new') newPage(args);
-else { console.log('usage: picture-book <init <slug> "<Title>" | new <slug> <page> | build [slug...|--all] [--artifact|--root] | check [slug...|--all]>'); process.exit(cmd ? 1 : 0); }
+else { console.log('usage: picture-book <init <slug> "<Title>" | new <slug> <page> [--sheet] | build [slug...|--all] [--artifact|--root] | check [slug...|--all]>'); process.exit(cmd ? 1 : 0); }

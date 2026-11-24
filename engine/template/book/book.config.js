@@ -4,4 +4,6 @@
   swatch: '#a9d5e8',   // the shelf card's paper colour
   blurb: '',           // one sentence for the shelf card
   aliases: [],         // old addresses that should redirect to this book
+  form: 'chain',       // story form, see engine/docs/STORY.md: chain, recipe, journey, cumulative, call-response, fortunately, countdown
+  series: '',          // books with the same series share a shelf on the landing page
 })

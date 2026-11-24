@@ -17,6 +17,25 @@ One sheet of paper on a green cutting mat. Every shape is a flat polygon with sl
 - **Callbacks.** Reuse a prop from an earlier book when the story touches it: the Metric, the 3am bed, the health check gate.
 - **Last page.** A hand offers the first page's object; tapping it runs `go(1, 1)`.
 
+## Speech bubbles (`say`)
+
+- One bubble per speaker per page. Ten words at most; `check` warns past ten words or three lines.
+- Bubble words are art words: report every one to the author.
+- The tail points at the speaker's mouth. Keep the bubble off faces and off the terminal.
+- White bubble → the background must not be white or near white. `shout` for an exclamation, coloured with `col` if it needs to stand out.
+- A bubble can be the tap target: wrap it in `hot()`.
+
+## Terminals (`term`)
+
+- Ink card, lime commands, white output. Commands start with `$ `; output lines do not.
+- One new command per page. Reveal it on tap with `upto`, so the reader "types" it.
+- Keep lines short enough to fit; `check` warns when a line overflows its width at its font size.
+- A terminal is dark, so it needs no dark background. It does need a gap from any ink piece.
+
+## Cheat sheet
+
+- Last page of every how-to book. The commands are data in `lines.js` (`commands: [{cmd, note}]`); the runtime lists them under the caption, each with a copy button. The scene draws the hand back to page 1.
+
 ## Engine gotchas
 
 - Animate with the CSS `translate` property and `opacity` only. `scale` or `rotate` on a `<g>` that has a `transform` attribute moves it. Need rotation → nest an inner `<g class="shake">` with no attribute.

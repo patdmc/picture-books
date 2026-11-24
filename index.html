@@ -15,7 +15,9 @@ h1{font-family:'Fredoka','Trebuchet MS',sans-serif;font-weight:700;font-size:cla
 p.lede{margin:0 0 32px;max-width:46ch;font-size:1.1rem;line-height:1.5}
 ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:28px}
 a{display:block;height:100%;box-sizing:border-box;background:var(--paper);color:var(--ink);text-decoration:none;padding:14px 14px 18px;box-shadow:0 10px 24px var(--shadow)}
-li:nth-child(1) a{transform:rotate(-1.2deg)} li:nth-child(2) a{transform:rotate(.8deg)} li:nth-child(3) a{transform:rotate(-.5deg)}
+ul+ul,ul+h2.series{margin-top:44px}
+h2.series{color:var(--on-mat);font-size:1.6rem;margin-bottom:18px}
+li:nth-child(3n+1) a{transform:rotate(-1.2deg)} li:nth-child(3n+2) a{transform:rotate(.8deg)} li:nth-child(3n) a{transform:rotate(-.5deg)}
 a:hover,a:focus-visible{transform:rotate(0) translateY(-4px)}
 a:focus-visible{outline:3px solid var(--on-mat);outline-offset:4px}
 .swatch{height:120px;display:grid;place-items:center;font-family:'Fredoka',sans-serif;font-weight:700;font-size:1.5rem;color:#d5433c;text-align:center;padding:0 10px}
@@ -29,7 +31,7 @@ p.about a{display:inline;height:auto;background:none;box-shadow:none;padding:0;c
 <body>
 <main>
   <h1>Picture Books</h1>
-  <p class="lede">Three cut-paper stories about how software gets built. Tap things. Each one ends where it began.</p>
+  <p class="lede">Cut-paper stories about how software gets built. Tap things. Each one ends where it began.</p>
   <ul>
     <li><a href="dev-metric/">
       <div class="swatch" style="background:#a9d5e8">a Metric…</div>

@@ -5,11 +5,22 @@ function render(enter,focusKey){const sc=SC[idx];
   art.innerHTML=`<rect width="800" height="500" fill="${sc.bg}"/>`+sc.draw(S);
   if(enter){$('cap').textContent=sc.cap;$('hint').textContent=sc.hint;
     $('count').textContent=idx?`page ${idx} of ${SC.length-1}`:'cover';$('prev').disabled=!idx;
-    $('next').setAttribute('aria-label',idx===SC.length-1?'Start the story again':'Next page');
+    $('next').setAttribute('aria-label',idx===SC.length-1?'Start the story again':'Next page');snips(sc.commands);
     art.querySelectorAll('.pc').forEach((e,i)=>e.style.setProperty('--i',i));
     stage.classList.add('entering');clearTimeout(enterT);enterT=setTimeout(()=>stage.classList.remove('entering'),1600)}
   else stage.classList.remove('entering');
   if(focusKey){const e=art.querySelector(`[data-tap="${focusKey}"]`);if(e)e.focus()}}
+/* cheat sheet: a page whose lines.js has commands:[{cmd,note}] lists them under the caption, each with a copy button */
+function copyText(s){if(navigator.clipboard&&window.isSecureContext)return navigator.clipboard.writeText(s).catch(()=>copyOld(s));return Promise.resolve(copyOld(s))}
+function copyOld(s){const t=document.createElement('textarea');t.value=s;t.setAttribute('readonly','');t.style.cssText='position:fixed;opacity:0;top:0;left:0';
+  document.body.appendChild(t);t.select();let ok=false;try{ok=document.execCommand('copy')}catch(_){}t.remove();if(!ok)throw new Error('copy blocked')}
+function snips(list){const ul=$('snips');ul.textContent='';ul.hidden=!(list&&list.length);if(ul.hidden)return;
+  for(const {cmd,note} of list){const li=document.createElement('li'),code=document.createElement('code'),b=document.createElement('button');
+    if(note){const p=document.createElement('span');p.className='note';p.textContent=note;li.appendChild(p)}
+    code.textContent=cmd;b.type='button';b.textContent='Copy';b.setAttribute('aria-label','Copy '+cmd);
+    b.addEventListener('click',()=>{let t;copyText(cmd).then(()=>{b.textContent='Copied';b.classList.add('done')},()=>{b.textContent='Select it';const r=document.createRange();r.selectNodeContents(code);const sel=getSelection();sel.removeAllRanges();sel.addRange(r)})
+      .finally(()=>{clearTimeout(t);t=setTimeout(()=>{b.textContent='Copy';b.classList.remove('done')},1500)})});
+    li.append(code,b);ul.appendChild(li)}}
 function go(i,dir){if(i<0)return;idx=i>=SC.length?1:i;S={n:0};
   sheet.classList.remove('turnN','turnP');void sheet.offsetWidth;sheet.classList.add(dir<0?'turnP':'turnN');render(true)}
 function tap(key,kb){const sc=SC[idx];sc.tap?sc.tap(S,key):S.n++;if(SC[idx]===sc)render(false,kb&&key)}

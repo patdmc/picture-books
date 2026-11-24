@@ -4,4 +4,5 @@
   swatch: '#cdb8e3',   // the shelf card's paper colour
   blurb: 'Validation, guardrails, and the line between platform and application.',
   aliases: ['If You Give a Dev an Agent.html'],   // old addresses that redirect here
+  form: 'chain',
 })

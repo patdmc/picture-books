@@ -1,8 +1,33 @@
 # Story rules
 
-The form mirrors "If You Give a Mouse a Cookie": a chain where each line's result becomes the next line's cause, ending where it began.
+Every book picks one **form**, named in `book.config.js` as `form:`. The voice rules below apply to every form; the shape changes.
 
-## Shape
+## Forms
+
+Each form ends on a page that offers a way back to page 1 (a hand, a door, a button). In a how-to book that page is the cheat sheet.
+
+| form | shape | each page hands off by | ends |
+|---|---|---|---|
+| `chain` | "If You Give a Mouse a Cookie". See **Chain** below. | the next line picks up the object the last one ended on | the first object again, "And then…" |
+| `recipe` | Numbered steps. "First, …" "Next, …" One step per page. | finishing a step reveals what the next one needs | the finished dish; the cheat sheet is the recipe card |
+| `journey` | There and back. Each page is a stop on the way. | arriving somewhere shows the road to the next stop | back home, carrying what they found |
+| `cumulative` | "This is the repo. This is the skill that lives in the repo…" | each page adds one new line and one new piece to the picture; earlier lines repeat | the whole chain read once in full |
+| `call-response` | A question to one character, their answer in a bubble, a pointer to the next. | the answer names the next character to ask | the first character is asked again |
+| `fortunately` | Alternating pages: "Fortunately, …" / "Unfortunately, …" | each turn's fix causes the next problem, or vice versa | a fortunate page that resolves the first problem |
+| `countdown` | "Five steps to live." Counting down, one step per page. | the number drops | zero: the thing is live |
+
+12 to 20 pages for every form, cover and cheat sheet included.
+
+## How-to books
+
+- Commands in the art are exact and runnable. A command a reader could copy must work as shown.
+- Commands appear in a `term()` as `$ ` lines. At most one new command per page.
+- Every command typed in the art is on the cheat sheet (`new <slug> cheat-sheet --sheet`), in story order. `check` warns when one is missing.
+- The cheat sheet's `note` for each command is a short plain sentence: what it does, not how.
+- Bubbles carry what a character says or asks. The caption carries the story. A command can be said in a bubble only if it is also on the terminal.
+- Claude Code commands, paths and flags are confirmed against current docs before they go on a page. Never from memory.
+
+## Chain
 
 - Title: "If You Give a/an [character] a/an [thing]…" The title is the first half of line 1.
 - Line 1 completes the title: "They're gonna want to graph it."

@@ -1,7 +1,7 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
 <title>If You Give a Dev an Agent</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Fredoka:wght@500;600;700&family=Permanent+Marker&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Fredoka:wght@500;600;700&family=JetBrains+Mono:wght@500&family=Permanent+Marker&display=swap">
 <style>
 /* Layout: one cut-paper sheet lying on a green cutting mat; art on top, story text beneath, page arrows below. */
 :root{
@@ -55,6 +55,8 @@ nav button:not(:disabled):active{transform:translateY(2px)}
 /* cut paper */
 .pc{filter:drop-shadow(1.2px 2.2px 1.2px rgba(0,0,0,.3))}
 .t{font-family:var(--display); font-weight:700}
+.mono{font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace; font-weight:500; pointer-events:none}
+.t tspan{pointer-events:none}
 .hot{cursor:pointer; outline:none}
 .hot:focus-visible{outline:3px dashed #2b2a28; outline-offset:4px}
 [data-drag]{cursor:ns-resize; touch-action:none}
@@ -79,7 +81,25 @@ nav button:not(:disabled):active{transform:translateY(2px)}
 .draw{animation:draw 1.1s ease-out both}
 .sheet.turnN{animation:turnN .4s ease-out}
 .sheet.turnP{animation:turnP .4s ease-out}
+@keyframes blink{50%{opacity:0}}
+.blink{animation:blink 1.1s steps(1) infinite}
+
+/* cheat sheet: real commands, click to copy */
+#snips{list-style:none; margin:10px auto 6px; padding:0; max-width:640px; display:grid; gap:10px}
+#snips li{display:grid; grid-template-columns:1fr auto; align-items:center; gap:4px 10px}
+#snips .note{grid-column:1 / -1; font-size:.92rem; line-height:1.35}
+#snips code{
+  display:block; overflow-x:auto; white-space:pre; padding:9px 12px; background:#2b2a28; color:#c9e27a;
+  font:500 .95rem/1.4 'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace; user-select:all; -webkit-user-select:all;
+}
+#snips button{
+  min-width:5.2em; min-height:40px; border:0; cursor:pointer; background:var(--accent); color:var(--ink);
+  font:600 .9rem var(--display); clip-path:polygon(4% 10%, 96% 4%, 98% 92%, 2% 96%);
+}
+#snips button:focus-visible{outline:3px solid var(--ink); outline-offset:2px; clip-path:none}
+#snips button.done{background:#a9cb4f}
 @media (prefers-reduced-motion: reduce){
+  .blink{animation:none}
   .entering .pc,.pop,.nudge,.shake,.draw,.sheet.turnN,.sheet.turnP{animation:none}
   .belt,.rej,.rejl{animation-duration:36s}
 }
@@ -101,6 +121,7 @@ nav button:not(:disabled):active{transform:translateY(2px)}
       </svg>
       <p id="cap" aria-live="polite"></p>
       <p id="hint"></p>
+      <ul id="snips" aria-label="Commands to copy" hidden></ul>
     </article>
   </div>
   <nav aria-label="Pages">
@@ -184,6 +205,39 @@ function pr(x,y,w,cls='',mark=''){let s=box(x,y,w,w*1.2,C.white);for(let i=0;i<4
 const mk=(x,y,s,size,rot=-3,cls='')=>`<text class="${cls}" x="${x}" y="${y}" font-size="${size}" fill="#c4161c" transform="rotate(${rot} ${x} ${y})" style="font-family:'Permanent Marker','Marker Felt','Comic Sans MS',cursive;pointer-events:none">${s}</text>`;
 const wavy=(x,y,cls='')=>`<path class="${cls}" d="M${x},${y} q150,-12 ${(790-x)/2},0 t${(790-x)/2},-4" fill="none" stroke="#c4161c" stroke-width="8" stroke-linecap="round"/>`;
 function sun(sx,sy){let s='';for(let i=0;i<8;i++){const a=i*.785;s+=poly([[sx+Math.cos(a-.2)*50,sy+Math.sin(a-.2)*50],[sx+Math.cos(a)*72,sy+Math.sin(a)*72],[sx+Math.cos(a+.2)*50,sy+Math.sin(a+.2)*50]],C.orange)}return s+circ(sx,sy,42,C.yellow)}
+
+
+/* ---------- words in the art: speech bubbles and terminals ---------- */
+const xe=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const pbWarn=m=>{if(typeof __warn==='function')__warn(m)};        /* check collects these; the browser ignores them */
+const textW=(s,size,mono)=>String(s).length*size*(mono?.6:.54);   /* an estimate: check has no fonts */
+function wrapWords(s,w,size){const out=[];let cur='';
+  for(const wd of String(s).split(/\s+/).filter(Boolean)){const t=cur?cur+' '+wd:wd;if(cur&&textW(t,size)>w){out.push(cur);cur=wd}else cur=t}
+  if(cur)out.push(cur);return out}
+/* Speech bubble centred on (x,y); the tail points at the speaker's mouth (o.tx,o.ty). */
+function say(x,y,text,o={}){const size=o.size||22,lh=size*1.18,L=wrapWords(text,o.w||200,size);
+  const words=String(text).split(/\s+/).filter(Boolean).length;
+  if(words>10)pbWarn(`bubble has ${words} words (max 10): "${text}"`);
+  if(L.length>3)pbWarn(`bubble wraps to ${L.length} lines (max 3): "${text}"`);
+  const tw=Math.max(...L.map(l=>textW(l,size))),rx=tw/2/.82+18,ry=L.length*lh/2/.74+20;
+  const tx=o.tx??x-rx*.4,ty=o.ty??y+ry+50,a=Math.atan2((ty-y)/ry,(tx-x)/rx);
+  let g=poly([[x+Math.cos(a-.28)*rx*.8,y+Math.sin(a-.28)*ry*.8],[tx,ty],[x+Math.cos(a+.28)*rx*.8,y+Math.sin(a+.28)*ry*.8]],o.col||C.white);
+  if(o.shout){const p=[],n=22;for(let i=0;i<n;i++){const t=i/n*6.2832,k=i%2?1.18:.96;p.push([x+Math.cos(t)*rx*k,y+Math.sin(t)*ry*k])}g+=poly(p,o.col||C.white)}
+  else g+=circ(x,y,rx,o.col||C.white,ry);
+  const y0=y-(L.length-1)*lh/2+size*.36;
+  g+=`<text class="t" x="${f(x)}" y="${f(y0)}" font-size="${size}" fill="${C.ink}" text-anchor="middle">`+L.map((l,i)=>`<tspan x="${f(x)}" dy="${i?f(lh):0}">${xe(l)}</tspan>`).join('')+'</text>';
+  return `<g class="${o.cls||''}">${g}</g>`}
+/* Terminal card. Lines starting with "$ " are commands (lime); the rest are output (white).
+   o.upto shows only the first N lines, so each tap can type the next one. */
+function term(x,y,w,hh,lines,o={}){const size=o.size||18,lh=size*1.45,n=clamp(o.upto??lines.length,0,lines.length);
+  let s=box(x,y,w,hh,C.ink)+box(x,y,w,26,C.dgrey);[0,1,2].forEach(i=>s+=circ(x+18+i*20,y+13,5.5,[C.red,C.yellow,C.lime][i]));
+  if(o.title)s+=`<text class="mono" x="${x+w/2}" y="${y+18}" font-size="13" fill="${C.white}" text-anchor="middle">${xe(o.title)}</text>`;
+  if(lines.length*lh+36>hh)pbWarn(`terminal holds ${lines.length} lines but is only ${hh} tall`);
+  lines.forEach((l,i)=>{const cmd=l.startsWith('$ ');if(cmd&&typeof __cmd==='function')__cmd(l.slice(2));
+    if(textW(l,size,1)>w-28)pbWarn(`terminal line too wide for ${w}px at size ${size}: "${l}"`);
+    if(i<n)s+=`<text class="mono${i===n-1&&o.upto!=null?' pop':''}" x="${x+14}" y="${f(y+34+size+i*lh)}" font-size="${size}" fill="${cmd?C.lime:C.white}">${xe(l)}</text>`});
+  if(o.cursor!==false){const r=Math.max(n-1,0),cy=y+34+size+r*lh,cx=x+14+(n?textW(lines[n-1],size,1)+4:0);s+=box(cx,cy-size*.8,size*.55,size,C.lime,'blink')}
+  return `<g class="${o.cls||''}">${s}</g>`}
 
 
 
@@ -441,11 +495,22 @@ function render(enter,focusKey){const sc=SC[idx];
   art.innerHTML=`<rect width="800" height="500" fill="${sc.bg}"/>`+sc.draw(S);
   if(enter){$('cap').textContent=sc.cap;$('hint').textContent=sc.hint;
     $('count').textContent=idx?`page ${idx} of ${SC.length-1}`:'cover';$('prev').disabled=!idx;
-    $('next').setAttribute('aria-label',idx===SC.length-1?'Start the story again':'Next page');
+    $('next').setAttribute('aria-label',idx===SC.length-1?'Start the story again':'Next page');snips(sc.commands);
     art.querySelectorAll('.pc').forEach((e,i)=>e.style.setProperty('--i',i));
     stage.classList.add('entering');clearTimeout(enterT);enterT=setTimeout(()=>stage.classList.remove('entering'),1600)}
   else stage.classList.remove('entering');
   if(focusKey){const e=art.querySelector(`[data-tap="${focusKey}"]`);if(e)e.focus()}}
+/* cheat sheet: a page whose lines.js has commands:[{cmd,note}] lists them under the caption, each with a copy button */
+function copyText(s){if(navigator.clipboard&&window.isSecureContext)return navigator.clipboard.writeText(s).catch(()=>copyOld(s));return Promise.resolve(copyOld(s))}
+function copyOld(s){const t=document.createElement('textarea');t.value=s;t.setAttribute('readonly','');t.style.cssText='position:fixed;opacity:0;top:0;left:0';
+  document.body.appendChild(t);t.select();let ok=false;try{ok=document.execCommand('copy')}catch(_){}t.remove();if(!ok)throw new Error('copy blocked')}
+function snips(list){const ul=$('snips');ul.textContent='';ul.hidden=!(list&&list.length);if(ul.hidden)return;
+  for(const {cmd,note} of list){const li=document.createElement('li'),code=document.createElement('code'),b=document.createElement('button');
+    if(note){const p=document.createElement('span');p.className='note';p.textContent=note;li.appendChild(p)}
+    code.textContent=cmd;b.type='button';b.textContent='Copy';b.setAttribute('aria-label','Copy '+cmd);
+    b.addEventListener('click',()=>{let t;copyText(cmd).then(()=>{b.textContent='Copied';b.classList.add('done')},()=>{b.textContent='Select it';const r=document.createRange();r.selectNodeContents(code);const sel=getSelection();sel.removeAllRanges();sel.addRange(r)})
+      .finally(()=>{clearTimeout(t);t=setTimeout(()=>{b.textContent='Copy';b.classList.remove('done')},1500)})});
+    li.append(code,b);ul.appendChild(li)}}
 function go(i,dir){if(i<0)return;idx=i>=SC.length?1:i;S={n:0};
   sheet.classList.remove('turnN','turnP');void sheet.offsetWidth;sheet.classList.add(dir<0?'turnP':'turnN');render(true)}
 function tap(key,kb){const sc=SC[idx];sc.tap?sc.tap(S,key):S.n++;if(SC[idx]===sc)render(false,kb&&key)}
