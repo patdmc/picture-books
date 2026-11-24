@@ -56,8 +56,18 @@ function keyGreen(img) {
   let br = 0, bgg = 0, bb = 0, bn = 0;
   for (let x = 0; x < w; x += 2) for (const y of [0, 1, h - 2, h - 1]) { const i = (y * w + x) * 4; if (gd(i) > bg * .7) { br += px[i]; bgg += px[i + 1]; bb += px[i + 2]; bn++; } }
   const BG = [br / bn, bgg / bn, bb / bn];
-  const hi = bg * .38, lo = bg * .12, AL = new Float32Array(w * h);
-  for (let k = 0; k < w * h; k++) { const g = gd(k * 4); AL[k] = g >= hi ? 0 : g <= lo ? 1 : (hi - g) / (hi - lo); }
+  // Key on hue and saturation. The backdrop is one hue, very saturated, at every brightness (its shadows too);
+  // green yarn is the same family of hue but much less saturated, so it stays.
+  const hsv = (r, g, b) => { const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn; let hh = 0;
+    if (d) hh = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    return [hh * 60 < 0 ? hh * 60 + 360 : hh * 60, mx ? d / mx : 0, mx / 255]; };
+  const [HB, SB] = hsv(...BG), AL = new Float32Array(w * h);
+  const ramp = (v, a, b) => v <= a ? 1 : v >= b ? 0 : (b - v) / (b - a);     // 1 at a, 0 at b
+  for (let k = 0; k < w * h; k++) { const i = k * 4, [hh, ss, vv] = hsv(px[i], px[i + 1], px[i + 2]);
+    let bgness;
+    if (vv < .16) bgness = gd(i) > 6 ? 1 : 0;                                   // too dark for hue: backdrop if still greenish
+    else bgness = ramp(Math.abs(hh - HB), 14, 30) * (1 - ramp(ss, SB * .8, SB * .93));
+    AL[k] = 1 - bgness; }
   // Only backdrop connected to the edge of the photo is removed: flood in from the border through
   // anything not fully opaque. Green light bouncing onto the doll (a cream muzzle, say) is left alone.
   const seen = new Uint8Array(w * h), stack = [];
@@ -65,14 +75,33 @@ function keyGreen(img) {
   for (let y = 0; y < h; y++) stack.push(y * w, y * w + w - 1);
   while (stack.length) { const k = stack.pop(); if (seen[k] || AL[k] >= .995) continue; seen[k] = 1;
     const x = k % w; if (x > 0) stack.push(k - 1); if (x < w - 1) stack.push(k + 1); if (k >= w) stack.push(k - w); if (k < w * (h - 1)) stack.push(k + w); }
+  // Backdrop enclosed by the doll (the gap between two legs) is not reached from the edge. A large enough
+  // patch of pure backdrop is removed anyway; small ones are more likely green light on the yarn.
+  const comp = new Uint8Array(w * h);
+  for (let k0 = 0; k0 < w * h; k0++) { if (seen[k0] || comp[k0] || AL[k0] > .05) continue;
+    const cells = [], st = [k0]; comp[k0] = 1;
+    while (st.length) { const k = st.pop(); cells.push(k); const x = k % w;
+      for (const n of [x > 0 ? k - 1 : -1, x < w - 1 ? k + 1 : -1, k - w, k + w]) if (n >= 0 && n < w * h && !comp[n] && !seen[n] && AL[n] <= .05) { comp[n] = 1; st.push(n); } }
+    if (cells.length > w * h / 2000) for (const k of cells) { seen[k] = 1;   // grow it through its soft edge too
+      const x = k % w; for (const n of [x > 0 ? k - 1 : -1, x < w - 1 ? k + 1 : -1, k - w, k + w]) if (n >= 0 && n < w * h && AL[n] < .995) seen[n] = 1; } }
   for (let k = 0; k < w * h; k++) if (!seen[k]) AL[k] = 1;
   for (let i = 0; i < px.length; i += 4) {
     const a = AL[i >> 2];
     if (a > 0 && a < 1) for (let c = 0; c < 3; c++) px[i + c] = Math.max(0, Math.min(255, (px[i + c] - (1 - a) * BG[c]) / a));   // unmix the backdrop from edge pixels
     px[i + 3] = Math.round(px[i + 3] * a * a);                                     // a squared: the edge pulls in a little
-    const g2 = px[i + 1] - Math.max(px[i], px[i + 2]);
-    if (g2 > 4) px[i + 1] = Math.max(px[i], px[i + 2]) + 4;                         // despill what is left
+    if (a < 1) { const g2 = px[i + 1] - Math.max(px[i], px[i + 2]); if (g2 > 4) px[i + 1] = Math.max(px[i], px[i + 2]) + 4; }   // despill edges only
   }
+  // keep the doll: the largest connected piece, and any other piece at least a tenth its size; drop specks
+  { const lab = new Int32Array(w * h), sizes = [0]; let n = 0;
+    for (let k0 = 0; k0 < w * h; k0++) { if (lab[k0] || px[k0 * 4 + 3] < 64) continue; n++; let c = 0; const st = [k0]; lab[k0] = n;
+      while (st.length) { const k = st.pop(); c++; const x = k % w;
+        for (const m of [x > 0 ? k - 1 : -1, x < w - 1 ? k + 1 : -1, k - w, k + w]) if (m >= 0 && m < w * h && !lab[m] && px[m * 4 + 3] >= 64) { lab[m] = n; st.push(m); } }
+      sizes.push(c); }
+    const big = Math.max(...sizes);
+    for (let k = 0; k < w * h; k++) { const l = lab[k]; if (l && sizes[l] < big / 10) px[k * 4 + 3] = 0;
+      if (!l && px[k * 4 + 3]) { const x = k % w; let near = 0;    // faint edge pixels stay only beside a kept piece
+        for (const m of [x > 0 ? k - 1 : -1, x < w - 1 ? k + 1 : -1, k - w, k + w]) if (m >= 0 && m < w * h && lab[m] && sizes[lab[m]] >= big / 10) near = 1;
+        if (!near) px[k * 4 + 3] = 0; } } }
   // drop specks: any opaque pixel with fewer than 3 opaque neighbours
   const A = Uint8Array.from({ length: w * h }, (_, k) => px[k * 4 + 3]);
   for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {

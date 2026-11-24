@@ -124,8 +124,9 @@ A cast can be photographs instead of drawings. Shoot or generate each character 
 node engine/cli/picture-book.js sprite amigurumi dev-0-happy art/amigurumi/dev-0-happy.jpg
 ```
 
-That removes the green (only green connected to the edge, so green light on the doll stays), takes the green out of edge pixels, trims, scales to 560px tall, and writes `engine/runtime/casts/amigurumi/dev-0-happy.png` plus its size in `sprites.json`. Keep the original in `art/<cast>/`.
+That removes the backdrop by hue and saturation (the backdrop is one saturated hue at every brightness; green yarn is duller, so it stays), only where it connects to the edge or forms a large enclosed patch (the gap between two legs), takes the green out of edge pixels, trims, scales to 560px tall, and writes `engine/runtime/casts/amigurumi/dev-0-happy.png` plus its size in `sprites.json`. Keep the original in `art/<cast>/`.
 
+- Nothing the character wears can be the backdrop's green: it is keyed out with the backdrop. Reshoot in another colour.
 - Names are `<who>-<mood>[-up]`: `who` is `dev-<n>` (for `DEVS[n]`), `agent`, `repo` or `metric`; `mood` is `happy`, `flat`, `worry`, `wow` or `sleep`; `-up` has an arm raised.
 - `sprite(cast, names, x, y, height, o)` in `cast.js` draws the first name that exists, feet on `(x, y)`, with a soft shadow. A cast file decides the names and falls back to paper for anything without a picture yet.
 - Site builds copy the pictures to `<site>/sprites/`; Artifact builds embed them; the editor serves them.
