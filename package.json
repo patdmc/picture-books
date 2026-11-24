@@ -1,0 +1,8 @@
+{
+  "name": "picture-books",
+  "private": true,
+  "scripts": {
+    "check": "node engine/cli/picture-book.js check --all",
+    "build": "node engine/cli/picture-book.js build --all"
+  }
+}

@@ -1,0 +1,19 @@
+// The pages, in story order. Reorder, add or drop a page here.
+([
+  'cover',
+  'ticket',
+  'telephone',
+  'guess',
+  'sentence',
+  'read-back',
+  'carried',
+  'room',
+  'brief',
+  'harness',
+  'checks',
+  'ask',
+  'next-sentence',
+  'remember',
+  'better-brief',
+  'another-request',
+])

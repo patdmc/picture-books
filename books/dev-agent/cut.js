@@ -1,0 +1,21 @@
+// The pages, in story order. Reorder, add or drop a page here.
+([
+  'cover',
+  'write-code',
+  'pull-request',
+  'many-agents',
+  'pile-up',
+  'review',
+  'validation',
+  'shortcut',
+  'guardrails',
+  'where',
+  'the-line',
+  'platform',
+  'application',
+  'owns',
+  'yes-no',
+  'sleep',
+  'idea',
+  'another-agent',
+])
