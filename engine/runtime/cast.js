@@ -7,13 +7,53 @@ function face(x,y,r,col,m='happy',lk=0){let g=circ(x,y,r,col);const ey=y-r*.12;
     else if(m==='worry')g+=line(`M${f(x-r*.35)},${f(y+r*.55)} q${f(r*.35)},${f(-r*.3)} ${f(r*.7)},0`);
     else g+=circ(x,y+r*.5,r*.18,C.ink)}
   return g}
+/* ink: comic-strip hair. Each Dev has their own style, in a natural hair colour, drawn as smooth curves:
+   a back layer behind the head and a front layer over it, with pen strokes for the flow of the hair.
+   Coordinates are the Dev's own: head centred on (0,-112), radius 23, top of the head at -135. */
+const HAIR_COL=['#5a3622','#231d1b','#a4472a','#c9973c','#2c2733','#7a4b2a','#3a2a22'];
+const hp=(d,fill)=>`<path class="pc${stc()}" d="${d}" fill="${fill}"/>`;
+const hl=d=>`<path d="${d}" fill="none" stroke="${C.ink}" stroke-width="1.4" stroke-linecap="round" opacity=".75"/>`;
+const HAIR=[
+  /* 0 the Dev: a tousled swoop, parted on the left, falling right */
+  {front:c=>hp('M-25,-106 C-30,-128 -18,-146 2,-146 C22,-146 31,-130 26,-106 C23,-118 18,-125 10,-128 C6,-122 -2,-120 -8,-124 C-12,-119 -18,-116 -21,-110 Z',c)
+     +hp('M-8,-124 C-4,-132 6,-135 14,-131 C10,-128 6,-123 4,-116 C0,-120 -4,-122 -8,-124 Z',c),
+   lines:hl('M-16,-138 C-10,-136 -6,-131 -5,-125')+hl('M-2,-143 C6,-140 11,-134 12,-127')+hl('M12,-140 C19,-135 23,-126 23,-117')+hl('M-22,-126 C-21,-120 -21,-114 -20,-110')},
+  /* 1: a cloud of curls */
+  {back:c=>[[-24,-120,11],[-20,-136,12],[-6,-146,13],[10,-145,13],[22,-134,12],[26,-118,11],[-27,-104,9],[28,-103,9]].map(([x,y,r])=>`<circle class="pc${stc()}" cx="${x}" cy="${y}" r="${r}" fill="${c}"/>`).join(''),
+   front:c=>[[-14,-131,9],[0,-135,10],[14,-131,9]].map(([x,y,r])=>`<circle class="pc${stc()}" cx="${x}" cy="${y}" r="${r}" fill="${c}"/>`).join(''),
+   lines:[[-20,-136],[-6,-146],[10,-145],[22,-134],[-24,-120],[26,-118],[0,-135]].map(([x,y])=>hl(`M${x-4},${y+2} c1,-5 7,-5 7,0`)).join('')},
+  /* 2: a bob with a straight fringe */
+  {back:c=>hp('M-27,-94 C-33,-124 -20,-148 0,-148 C20,-148 33,-124 27,-94 C22,-92 18,-94 16,-97 L-16,-97 C-18,-94 -22,-92 -27,-94 Z',c),
+   front:c=>hp('M-22,-118 C-22,-136 -12,-144 0,-144 C12,-144 22,-136 22,-118 L15,-121 L9,-118 L3,-121 L-3,-118 L-9,-121 L-15,-118 Z',c),
+   lines:hl('M-9,-140 L-9,-122')+hl('M3,-142 L3,-122')+hl('M-24,-118 C-25,-108 -25,-100 -24,-95')+hl('M24,-118 C25,-108 25,-100 24,-95')},
+  /* 3: a high ponytail */
+  {back:c=>hp('M16,-136 C34,-150 48,-132 42,-108 C40,-96 34,-90 30,-86 C34,-100 34,-114 24,-124 Z',c),
+   front:c=>hp('M-24,-110 C-28,-132 -14,-146 2,-146 C18,-146 28,-134 25,-112 C20,-124 10,-130 0,-130 C-10,-130 -18,-122 -24,-110 Z',c)+`<rect class="pc${stc()}" x="14" y="-142" width="10" height="9" rx="3" fill="${C.red}" transform="rotate(-30 19 -137)"/>`,
+   lines:hl('M-14,-140 C-8,-136 -2,-134 6,-134')+hl('M36,-130 C40,-118 38,-104 32,-92')+hl('M-20,-128 C-22,-122 -23,-116 -23,-111')},
+  /* 4: a top bun */
+  {back:c=>`<circle class="pc${stc()}" cx="2" cy="-150" r="12" fill="${c}"/>`,
+   front:c=>hp('M-24,-110 C-27,-131 -14,-142 1,-142 C16,-142 28,-131 24,-110 C20,-122 12,-128 1,-128 C-10,-128 -19,-121 -24,-110 Z',c),
+   lines:hl('M-6,-152 c3,-6 12,-6 14,1')+hl('M-16,-134 C-8,-138 8,-138 16,-134')+hl('M-21,-122 C-22,-118 -23,-114 -23,-110')},
+  /* 5: short and spiky, swept up */
+  {front:c=>hp('M-24,-108 C-27,-122 -24,-132 -20,-136 L-22,-148 L-12,-140 L-8,-154 L0,-142 L8,-155 L11,-141 L22,-150 L21,-136 C26,-130 27,-120 24,-108 C20,-120 10,-126 0,-126 C-10,-126 -20,-120 -24,-108 Z',c),
+   lines:hl('M-10,-130 L-11,-142')+hl('M2,-130 L4,-146')+hl('M14,-128 L18,-142')},
+  /* 6: long and wavy, past the shoulders */
+  {back:c=>hp('M-26,-120 C-36,-96 -24,-82 -32,-64 C-20,-70 -16,-80 -18,-92 L18,-92 C16,-80 20,-70 32,-64 C24,-82 36,-96 26,-120 Z',c),
+   front:c=>hp('M-25,-108 C-28,-132 -14,-146 0,-146 C14,-146 28,-132 25,-108 C18,-124 10,-130 0,-131 C-8,-125 -18,-120 -25,-108 Z',c),
+   lines:hl('M-28,-96 C-24,-86 -30,-76 -26,-68')+hl('M28,-96 C24,-86 30,-76 26,-68')+hl('M0,-140 C-6,-134 -14,-128 -20,-118')},
+];
+function inkHair(k,part){const H=HAIR[k%HAIR.length],c=HAIR_COL[k%HAIR_COL.length];
+  return part==='back'?(H.back?H.back(c):''):(H.front?H.front(c):'')+H.lines}
 function dev(x,y,s,c,o={}){const [hd,bd]=c;let g='';
   g+=strip(-9,-42,-11,-4,10,C.ink)+strip(9,-42,11,-4,10,C.ink)+box(-21,-7,17,9,C.ink)+box(4,-7,17,9,C.ink);
   g+=o.up2?strip(-17,-82,-40,-114,9,hd):strip(-17,-82,-36,-54,9,hd);
   g+=o.up?strip(17,-82,40,-114,9,hd):strip(17,-82,36,-54,9,hd);
   g+=poly([[-23,-40],[24,-41],[18,-92],[-17,-91]],bd);
   if(o.tuft)g+=poly([[-10,-130],[2,-150],[4,-132],[14,-146],[12,-128]],bd);
+  const ink=typeof STYLE!=='undefined'&&STYLE==='ink',k=Math.max(0,DEVS.indexOf(c));
+  if(ink)g+=inkHair(k,'back');
   g+=face(0,-112,23,hd,o.m,o.look||0);
+  if(ink)g+=inkHair(k,'front');
   return `<g transform="translate(${x},${y}) scale(${s})" ${o.cls?`class="${o.cls}"`:''}>${g}</g>`}
 function metric(x,y,r,col=C.yellow,cls=''){return `<g class="${cls}">`+circ(x,y,r,col)+circ(x-r*.33,y-r*.12,r*.11,C.ink)+circ(x+r*.33,y-r*.12,r*.11,C.ink)+line(`M${f(x-r*.3)},${f(y+r*.25)} q${f(r*.3)},${f(r*.3)} ${f(r*.6)},0`)+'</g>'}
 function graph(x,y,w,hh,vals,col,o={}){const px0=x+44,px1=x+w-26,py0=y+hh-36,py1=y+26;
@@ -103,9 +143,9 @@ function cloud(x,y,cls=''){return `<g class="${cls}"><g class="solid${stc()}">`+
    engine/runtime/casts/ and register themselves in CASTS. Styles (paper, ink, felt) are CSS only. */
 const ROLES={dev,face,agent,metric,repo,cloud,photo,rocket,book};
 const CASTS={paper:{}};
-const STYLES=['paper','ink','felt','macrame','embroidery'];
+const STYLES=['paper','ink','felt','embroidery'];
 let CAST='paper',STYLE='paper';
-/* Draw part of a scene in another style and cast: as('ink','toys',()=>dev(...)). */
+/* Draw part of a scene in another style (and cast): as('ink',null,()=>dev(...)). */
 function as(style,cast,fn){const s0=STYLE,c0=CAST;STYLE=STYLES.includes(style)?style:s0;useCast(cast||c0);let out;
   try{out=fn()}finally{const st=STYLE;STYLE=s0;useCast(c0);out=`<g class="sty-${st}">${out}</g>`}return out}
 function useCast(name){CAST=CASTS[name]?name:'paper';const k={...ROLES,...CASTS[CAST]};

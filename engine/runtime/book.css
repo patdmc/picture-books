@@ -37,6 +37,10 @@ body{
 }
 #hint{margin:2px 0 4px; text-align:center; font-family:var(--display); font-weight:500; font-size:.85rem; letter-spacing:.04em; opacity:.6; min-height:1.3em}
 nav{display:flex; align-items:center; gap:18px; font-family:var(--display); font-weight:500}
+/* back to the shelf: every book page on the site has one */
+nav .shelf{color:var(--on-mat); text-decoration:none; font-weight:600; padding:12px 14px; margin-right:6px; background:rgba(0,0,0,.18); clip-path:polygon(4% 10%,97% 4%,98% 92%,2% 96%)}
+nav .shelf:hover{background:rgba(0,0,0,.3)}
+nav .shelf:focus-visible{outline:3px solid var(--on-mat); outline-offset:3px; clip-path:none}
 #count{min-width:7.5em; text-align:center; color:var(--on-mat-dim); font-variant-numeric:tabular-nums}
 nav button{
   width:52px; height:52px; border:0; padding:0; cursor:pointer; background:var(--accent);
@@ -86,18 +90,17 @@ nav button:not(:disabled):active{transform:translateY(2px)}
    The whole-scene filter comes from <html data-style>, or from a sty-* group made by as(). */
 .gloss,.shadow{stroke:none}
 .knot{pointer-events:none}
-[data-style="ink"] .art,.sty-ink,[data-style="macrame"] .art,.sty-macrame{filter:url(#wobble)}
-/* felt filters each piece, not the scene, so terminal and caption text stay crisp */
+[data-style="ink"] .art,.sty-ink{filter:url(#wobble)}
 /* ink: coloured pen and ink with a wash, like a Sunday comic strip */
-.pc.st-ink{filter:none; stroke:#1d1b19; stroke-width:2.4; stroke-linejoin:round; vector-effect:non-scaling-stroke}
+.pc.st-ink{filter:none; stroke:#1d1b19; stroke-width:1.6; stroke-linejoin:round; vector-effect:non-scaling-stroke}
 .solid.st-ink{filter:url(#outline)}      /* pieces that read as one shape (bubbles, clouds) get one outline round the whole */
 .solid.st-ink .pc{stroke:none}
 .t.st-ink{stroke:none; font-family:'Patrick Hand','Comic Neue','Comic Sans MS',cursive; font-weight:400; letter-spacing:.02em}
-/* felt: fuzzy fibre edges, threads through every piece, a stitched edge */
-.pc.st-felt{filter:url(#fiber); stroke:rgba(255,255,255,.55); stroke-width:3.2; stroke-dasharray:.5 6; stroke-linecap:round; vector-effect:non-scaling-stroke}
-/* macrame: knotted cord; shapes.js adds the knot layer and the fringe */
-.pc.st-macrame{stroke:rgba(0,0,0,.2); stroke-width:1.6; stroke-linejoin:round; vector-effect:non-scaling-stroke}
-.t.st-felt,.t.st-macrame,.t.st-embroidery{stroke:none}
+/* felt: like paper, but thick: each cut piece stands off the page on its own side wall and shadow (filtered per piece, so text stays crisp) */
+.pc.st-felt{filter:url(#felt)}
+.pc.st-felt.tiny{filter:drop-shadow(.6px 1.2px 0 rgba(0,0,0,.35))}    /* pupils and specks: too small to fuzz */
+.t.st-felt{filter:drop-shadow(1px 2px 0 rgba(0,0,0,.25))}
+.t.st-felt,.t.st-embroidery{stroke:none}
 /* embroidery: satin-stitch fills (shapes.js), a backstitched outline, a little puff off the linen */
 .pc.st-embroidery{filter:drop-shadow(0 1px .6px rgba(0,0,0,.35)); stroke:rgba(0,0,0,.42); stroke-width:1.5; stroke-dasharray:5 2.4; stroke-linecap:round; vector-effect:non-scaling-stroke}
 .t.st-embroidery{font-family:'Fredoka',sans-serif; font-weight:600; paint-order:stroke; stroke:rgba(0,0,0,.25); stroke-width:.6px; stroke-dasharray:3 1.5}

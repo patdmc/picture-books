@@ -40,6 +40,21 @@ function check(slug) { try { return { ok: true, report: pb.checkReport(slug) }; 
 
 /* ---------- Claude ---------- */
 let run = null;   // one run at a time
+function newBookPrompt({ book, title, idea, form }) {
+  const formLine = form && pb.FORMS.includes(form) ? `Use the '${form}' form.` : 'Choose the form from engine/docs/STORY.md that best fits the idea, and set it as form: in book.config.js.';
+  return `Write a new picture book in books/${book}/ of this repository. The editor has already created it with init: its title is "${title}", and it holds placeholder pages (cover, first, last).
+
+The author's idea, in their words:
+${idea}
+
+${formLine}
+Follow skills/picture-book/SKILL.md (steps 4 to 6) and the rules in engine/docs/STORY.md, engine/docs/DESIGN.md and engine/docs/CAST.md. Read one finished book in books/ for patterns first.
+Do not stop to ask for approval: the author will review and revise every page in the editor afterwards.
+Write the whole book: a cover, one page per line with lines.js and scene.js, the order in cut.js. Make new pages with \`node engine/cli/picture-book.js new ${book} <page>\`, name pages by what happens, and drop the placeholders from cut.js if you do not use them. A how-to book ends with a cheat sheet (\`new ${book} cheat-sheet --sheet\`). Fill tag, swatch and blurb in book.config.js.
+Run \`node engine/cli/picture-book.js check ${book}\` until it prints ok, and fix every warning you can.
+Do not build, publish, add the book to books/shelf.js, commit or push.
+Finish with the title and a numbered list of the captions.`;
+}
 function claudePrompt({ book, page, direction }) {
   const where = page ? `The author is looking at the page '${page}' (books/${book}/pages/${page}/: lines.js holds the words, scene.js the picture).` : 'The direction is about the whole book.';
   return `You are editing the picture book in books/${book}/ of this repository, from the local picture-book editor.
@@ -55,7 +70,7 @@ Finish with two or three plain sentences on what you changed.`;
 }
 function startClaude(body, res) {
   if (run) { res.writeHead(409, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ error: 'Claude is already working on something. Stop it first.' })); }
-  const args = ['-p', claudePrompt(body), '--output-format', 'stream-json', '--verbose', '--permission-mode', 'acceptEdits',
+  const args = ['-p', body.mode === 'new-book' ? newBookPrompt(body) : claudePrompt(body), '--output-format', 'stream-json', '--verbose', '--permission-mode', 'acceptEdits',
     '--allowedTools', 'Read', 'Edit', 'Write', 'Glob', 'Grep', 'Bash(node engine/cli/picture-book.js:*)'];
   if (body.session && /^[0-9a-f-]{8,64}$/i.test(body.session)) args.push('--resume', body.session);
   res.writeHead(200, { 'content-type': 'application/x-ndjson', 'cache-control': 'no-store' });
@@ -124,7 +139,8 @@ function handler(port) {
       if (B !== undefined && !okName(B)) return json(res, 400, { error: 'bad book' });
       if (P !== undefined && P !== null && !okName(P)) return json(res, 400, { error: 'bad page' });
       if (u.pathname === '/api/claude') {
-        if (typeof body.direction !== 'string' || !body.direction.trim()) return json(res, 400, { error: 'say what to change' });
+        if (body.mode === 'new-book') { if (typeof body.idea !== 'string' || !body.idea.trim() || typeof body.title !== 'string') return json(res, 400, { error: 'describe the idea' }); }
+        else if (typeof body.direction !== 'string' || !body.direction.trim()) return json(res, 400, { error: 'say what to change' });
         return startClaude(body, res);
       }
       if (u.pathname === '/api/claude/stop') { if (run) run.kill('SIGINT'); return json(res, 200, { stopped: !!run }); }
@@ -163,6 +179,10 @@ function handler(port) {
       if (u.pathname === '/api/new-book') {
         if (typeof body.title !== 'string' || !body.title.trim()) return json(res, 400, { error: 'give it a title' });
         pb.init([B, body.title.trim()]);
+        const cfg = path.join(BOOKS, B, 'book.config.js');
+        if (pb.FORMS.includes(body.form)) setField(cfg, 'form', body.form);
+        if (['paper', 'ink', 'felt', 'embroidery'].includes(body.style)) setField(cfg, 'style', body.style);
+        if (typeof body.series === 'string') setField(cfg, 'series', body.series.slice(0, 60));
         return json(res, 200, check(B));
       }
       return json(res, 404, { error: 'not found' });

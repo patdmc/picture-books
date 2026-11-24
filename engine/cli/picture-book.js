@@ -39,7 +39,8 @@ function loadBook(slug) {
 
 function bookJs(b) {
   const sc = b.pages.map(p => `/* ${p.name} */ Object.assign({name:${JSON.stringify(p.name)}},\n${p.lines},\n${p.scene})`).join(',\n\n');
-  const casts = fs.readdirSync(path.join(ENG, 'runtime/casts')).filter(f => f.endsWith('.js')).sort().map(f => read(path.join(ENG, 'runtime/casts', f)));
+  const cdir = path.join(ENG, 'runtime/casts');   // optional: other casts, each registering itself in CASTS
+  const casts = (fs.existsSync(cdir) ? fs.readdirSync(cdir) : []).filter(f => f.endsWith('.js')).sort().map(f => read(path.join(cdir, f)));
   return [read(path.join(ENG, 'runtime/shapes.js')), read(path.join(ENG, 'runtime/cast.js')), ...casts, b.helpers,
     `const BOOK=${JSON.stringify({ style: b.config.style || 'paper', cast: b.config.cast || 'paper' })};\n/* ---------- the pages, in cut order ---------- */\nconst SC=[\n${sc}\n];`, read(path.join(ENG, 'runtime/book.js'))].join('\n\n');
 }
@@ -49,7 +50,8 @@ const SKELETON = '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
   '<style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}' +
   'body{margin:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style></head><body>\n{{BODY}}\n</body></html>\n';
 
-const bookBody = b => fill(read(path.join(ENG, 'runtime/shell.html')), { CSS: read(path.join(ENG, 'runtime/book.css')), JS: bookJs(b), TITLE: esc(b.config.title) });
+// shelf: a link back to the landing page, for pages served from the site (not for Artifacts or the editor preview)
+const bookBody = (b, shelf = false) => fill(read(path.join(ENG, 'runtime/shell.html')), { SHELF: shelf ? '<a class="shelf" href="../">← All books</a>' : '', CSS: read(path.join(ENG, 'runtime/book.css')), JS: bookJs(b), TITLE: esc(b.config.title) });
 
 function check(slug) { console.log(checkReport(slug)); }
 
@@ -94,7 +96,7 @@ function build(args) {
   const artifact = args.includes('--artifact'), root = args.includes('--pages') || args.includes('--root'), dest = root ? PAGES : SITE, label = root ? 'docs/' : 'site/';
   const list = slugs(args.filter(a => !a.startsWith('--') || a === '--all'));
   for (const slug of list) {
-    const b = loadBook(slug), body = bookBody(b);
+    const b = loadBook(slug), body = bookBody(b, !artifact);
     if (artifact) { write(path.join(OUT, slug + '.html'), body); console.log(`out/${slug}.html (page body, for publishing as an Artifact)`); continue; }
     write(path.join(dest, slug, 'index.html'), fill(SKELETON, { BODY: body }));
     for (const a of b.config.aliases || [])
@@ -123,12 +125,12 @@ function contact(args) {
   const taps = +(opt('taps') ?? 9);
   const out = path.join(SITE, slug, `contact-${taps}.html`);
   write(out, contactHtml(slug, taps));
-  console.log(path.relative(ROOT, out) + '   (add ?style=ink&cast=toys to compare)');
+  console.log(path.relative(ROOT, out) + '   (add ?style=ink to compare)');
 }
 function contactHtml(slug, taps = 9) {
   const b = loadBook(slug);
   const grid = `<script>
-document.querySelector('.desk').hidden=true;
+document.querySelector('.desk').style.cssText='position:absolute;left:-10000px;top:0';
 const g=document.createElement('div');g.className='contact';
 SC.forEach((sc,i)=>{S={n:${taps}};dress(sc);const d=document.createElement('figure');
   d.innerHTML='<svg viewBox="0 0 800 500"><rect width="800" height="500" fill="'+sc.bg+'"/><g class="sty-'+STYLE+'">'+sc.draw.call(sc,S)+'</g></svg>';

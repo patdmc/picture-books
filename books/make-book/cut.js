@@ -9,7 +9,6 @@
   'two-files',
   'check',
   'style',
-  'cast',
   'mixer',
   'editor',
   'publish',

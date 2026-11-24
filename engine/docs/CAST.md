@@ -100,18 +100,18 @@ Book-specific helpers (a request sheet, a row of stage cards) go in the book's `
 
 ## Styles and casts
 
-Two settings in `book.config.js`, both overridable on the URL for comparing (`?style=ink&cast=toys`):
+Two settings in `book.config.js`, both overridable on the URL for comparing (`?style=ink`):
 
 | setting | swaps | values |
 |---|---|---|
-| `style` | how every shape is drawn: outlines, texture, shadows, lettering. CSS and SVG filters in `book.css` and `shell.html`. | `paper` (cut paper), `ink` (coloured pen and ink with a wash), `felt` (fuzzy fibre, stitched edges), `macrame` (knotted cord over each piece's colour, fringe on big pieces), `embroidery` (satin-stitch fills at three angles, backstitched outlines, linen ground) |
-| `cast` | who plays each role. A file in `engine/runtime/casts/` that registers replacements in `CASTS`. | `paper` (paper people), `toys` (peg dolls, a tin wind-up robot, a toy chest, a bouncy ball, a cotton-wool cloud) |
+| `style` | how every shape is drawn: outlines, texture, shadows, lettering. CSS and SVG filters in `book.css` and `shell.html`. | `paper` (cut paper), `ink` (coloured pen and ink with a wash), `felt` (thick cut felt standing off the page: side wall, soft shadow, matted fibres), `embroidery` (satin-stitch fills at three angles, backstitched outlines, linen ground) |
+| `cast` | who plays each role. A file in `engine/runtime/casts/` that registers replacements in `CASTS`. | `paper` (paper people). The only cast for now; the mechanism is kept for the next one. |
 
 - A page can set its own `style:` and `cast:` in `scene.js`; the URL still wins.
 - `as(style, cast, () => ...)` draws part of a scene in another style and cast, so one page can mix them (each piece carries its style as an `st-*` class).
 - A cast replaces role helpers (`dev`, `face`, `agent`, `metric`, `repo`, `cloud`, `photo`, `rocket`, `book`) with the **same arguments, feet point and height**. Scenes never check which cast is playing.
 - A new role helper that a cast might replace → add it to `ROLES` and `useCast()` at the end of `cast.js`.
 - Pieces that should read as one shape in `ink` (a bubble and its tail, a cloud) go inside `<g class="solid">`, which gets one outline round the whole group.
-- `macrame` and `embroidery` are the styles with JS: `poly()` adds a thread layer (`#knots`, or `#satin0`-`#satin2` chosen from the piece's position) to every piece 20 units or larger; for macrame `box()` hangs a fringe from boxes at least 80 by 36. `gloss` and `shadow` pieces stay plain.
+- `embroidery` is the one style with JS: `poly()` adds satin stitch (`#satin0`-`#satin2`, chosen from the piece's position) to every piece 20 units or larger.
 - `check` draws every page in every style with every cast. `contact <slug>` writes `site/<slug>/contact-9.html`, every page in a grid; add `?style=` and `?cast=` to see the book another way.
-- Toys are generic toy types. Never a recognisable toy line or film character.
+- Small pieces (under 10 across: pupils, specks) get the class `tiny`, and textured styles leave them crisp.

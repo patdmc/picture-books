@@ -34,7 +34,7 @@ node engine/cli/picture-book.js init my-book "If You Give a Dev a Thing"
 node engine/cli/picture-book.js new my-book thresholds    # then add 'thresholds' to books/my-book/cut.js
 node engine/cli/picture-book.js check --all               # draws every page at several tap counts
 node engine/cli/picture-book.js build --all               # writes site/ for a local look
-node engine/cli/picture-book.js contact my-book           # every page on one sheet; add ?style=ink&cast=toys
+node engine/cli/picture-book.js contact my-book           # every page on one sheet; add ?style=ink
 node engine/cli/picture-book.js edit                      # the local editor at http://localhost:4800
 open site/index.html
 ```
@@ -48,6 +48,7 @@ open site/index.html
 - **Script:** every page's caption and hint, edited in place; drag a page (or use its arrows) to reorder `cut.js`; add or remove pages.
 - **Preview:** the selected page, live, in any style and cast.
 - **Source:** the page's `lines.js` and `scene.js`; save with Cmd+S and the check runs.
+- **New book:** give a title and the whole idea (and, if you like, the form and style). Claude writes every page from it, and the book opens in the editor for you to revise.
 - **Ask Claude:** say what to change in your own words. It runs the Claude Code CLI (`claude -p`) in this repo with edit access to the book and permission to run the check, streams what it does, and reloads the preview. Needs Claude Code installed and logged in.
 
 ## Deploying
