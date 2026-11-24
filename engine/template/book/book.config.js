@@ -5,7 +5,7 @@
   blurb: '',           // one sentence for the shelf card
   aliases: [],         // old addresses that should redirect to this book
   form: 'chain',       // story form, see engine/docs/STORY.md: chain, recipe, journey, cumulative, call-response, fortunately, countdown
-  series: '',
+  series: '',          // books with the same series share a shelf on the landing page
   style: 'paper',      // paper, ink or felt; ?style= overrides it, see engine/docs/CAST.md
-  cast: 'paper',       // paper or toys; ?cast= overrides it          // books with the same series share a shelf on the landing page
+  cast: 'paper',       // paper or toys; ?cast= overrides it
 })
