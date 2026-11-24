@@ -1,0 +1,677 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<title>How to Make a Picture Book</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Fredoka:wght@500;600;700&family=JetBrains+Mono:wght@500&family=Patrick+Hand&family=Permanent+Marker&display=swap">
+<style>
+/* Layout: one cut-paper sheet lying on a green cutting mat; art on top, story text beneath, page arrows below. */
+:root{
+  --mat:#2f7566; --mat-line:rgba(255,255,255,.16); --on-mat:#f3f0e4; --on-mat-dim:#cfe3da;
+  --paper:#f8f4ea; --ink:#2b2a28; --accent:#f5c542; --shadow:rgba(0,0,0,.32);
+  --display:'Fredoka','Trebuchet MS','Arial Rounded MT Bold',sans-serif;
+  --body:'Andika','Trebuchet MS',Verdana,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --mat:#16332d; --mat-line:rgba(255,255,255,.08); --on-mat:#ece8da; --on-mat-dim:#9fbdb2;
+  --paper:#ece6d6; --ink:#262523; --accent:#e9b93a; --shadow:rgba(0,0,0,.55); color-scheme:dark } }
+:root[data-theme="dark"]{
+  --mat:#16332d; --mat-line:rgba(255,255,255,.08); --on-mat:#ece8da; --on-mat-dim:#9fbdb2;
+  --paper:#ece6d6; --ink:#262523; --accent:#e9b93a; --shadow:rgba(0,0,0,.55); color-scheme:dark }
+
+html,body{height:100%}
+body{
+  background:var(--mat);
+  background-image:linear-gradient(var(--mat-line) 1px,transparent 1px),linear-gradient(90deg,var(--mat-line) 1px,transparent 1px);
+  background-size:32px 32px;
+  color:var(--on-mat); font-family:var(--body);
+}
+.desk{
+  min-height:100%; box-sizing:border-box; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px;
+  padding-block:20px;
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px));
+}
+.sr{position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%)}
+.book{width:100%; max-width:min(860px, 118vh)}
+.sheet{
+  background:var(--paper); color:var(--ink); padding:14px 14px 10px; transform:rotate(-.35deg);
+  box-shadow:0 2px 0 rgba(0,0,0,.08), 0 10px 24px var(--shadow);
+}
+#stage{display:block; width:100%; height:auto; touch-action:pan-y; user-select:none; -webkit-user-select:none; transform:rotate(.5deg)}
+#cap{
+  font-size:clamp(1.05rem, 2.4vw, 1.4rem); line-height:1.45; margin:14px auto 0; max-width:40ch; text-align:center;
+  text-wrap:balance; min-height:4.4em; display:flex; align-items:center; justify-content:center;
+}
+#hint{margin:2px 0 4px; text-align:center; font-family:var(--display); font-weight:500; font-size:.85rem; letter-spacing:.04em; opacity:.6; min-height:1.3em}
+nav{display:flex; align-items:center; gap:18px; font-family:var(--display); font-weight:500}
+#count{min-width:7.5em; text-align:center; color:var(--on-mat-dim); font-variant-numeric:tabular-nums}
+nav button{
+  width:52px; height:52px; border:0; padding:0; cursor:pointer; background:var(--accent);
+  clip-path:polygon(8% 12%, 93% 6%, 96% 90%, 5% 95%); display:grid; place-items:center;
+}
+nav button svg{width:26px; height:26px; fill:var(--ink)}
+nav button:disabled{opacity:.35; cursor:default}
+nav button:focus-visible{outline:3px solid var(--on-mat); outline-offset:3px; clip-path:none}
+nav button:not(:disabled):active{transform:translateY(2px)}
+
+/* cut paper */
+.pc{filter:drop-shadow(1.2px 2.2px 1.2px rgba(0,0,0,.3))}
+.t{font-family:var(--display); font-weight:700}
+.gloss{filter:none; opacity:.42; pointer-events:none}
+.shadow{filter:none; opacity:.16}
+.mono{font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace; font-weight:500; white-space:pre; pointer-events:none}
+.t tspan{pointer-events:none}
+.hot{cursor:pointer; outline:none}
+.hot:focus-visible{outline:3px dashed #2b2a28; outline-offset:4px}
+[data-drag]{cursor:ns-resize; touch-action:none}
+
+@keyframes lay{from{opacity:0; translate:0 -18px}}
+@keyframes pop{from{opacity:0; translate:0 -26px}}
+@keyframes nudge{50%{translate:0 -6px}}
+@keyframes shake{from{rotate:-12deg} to{rotate:12deg}}
+@keyframes belt{to{translate:720px 0}}
+@keyframes rej{0%,58%{translate:0 0;opacity:1} 70%{translate:-220px -380px;opacity:1} 70.1%,100%{translate:-220px -380px;opacity:0}}
+@keyframes rejl{0%,57%{opacity:0} 58%,72%{opacity:1} 73%,100%{opacity:0}}
+@keyframes draw{from{clip-path:inset(-20px 100% -20px -20px)} to{clip-path:inset(-20px)}}
+@keyframes turnN{from{opacity:0; transform:translateX(46px) rotate(1.6deg)}}
+@keyframes turnP{from{opacity:0; transform:translateX(-46px) rotate(-2deg)}}
+.entering .pc,.entering .knot{animation:lay .5s cubic-bezier(.2,.8,.3,1) both; animation-delay:calc(var(--i,0) * 12ms)}
+.pop{animation:pop .45s cubic-bezier(.2,.9,.3,1.2) both}
+.nudge{animation:nudge 1.5s ease-in-out infinite}
+.shake{transform-box:fill-box; transform-origin:50% 0; animation:shake .16s ease-in-out infinite alternate}
+.belt{animation:belt 8.8s linear infinite}
+.rej{animation:rej 8.8s linear infinite}
+.rejl{animation:rejl 8.8s linear infinite}
+.draw{animation:draw 1.1s ease-out both}
+.sheet.turnN{animation:turnN .4s ease-out}
+.sheet.turnP{animation:turnP .4s ease-out}
+@keyframes blink{50%{opacity:0}}
+.blink{animation:blink 1.1s steps(1) infinite}
+
+/* ---------- styles: the same pieces in another medium ----------
+   Each piece carries its style as a class (st-ink…), set by shapes.js from STYLE as it draws.
+   The whole-scene filter comes from <html data-style>, or from a sty-* group made by as(). */
+.gloss,.shadow{stroke:none}
+.knot{pointer-events:none}
+[data-style="ink"] .art,.sty-ink,[data-style="macrame"] .art,.sty-macrame{filter:url(#wobble)}
+/* felt filters each piece, not the scene, so terminal and caption text stay crisp */
+/* ink: coloured pen and ink with a wash, like a Sunday comic strip */
+.pc.st-ink{filter:none; stroke:#1d1b19; stroke-width:2.4; stroke-linejoin:round; vector-effect:non-scaling-stroke}
+.solid.st-ink{filter:url(#outline)}      /* pieces that read as one shape (bubbles, clouds) get one outline round the whole */
+.solid.st-ink .pc{stroke:none}
+.t.st-ink{stroke:none; font-family:'Patrick Hand','Comic Neue','Comic Sans MS',cursive; font-weight:400; letter-spacing:.02em}
+/* felt: fuzzy fibre edges, threads through every piece, a stitched edge */
+.pc.st-felt{filter:url(#fiber); stroke:rgba(255,255,255,.55); stroke-width:3.2; stroke-dasharray:.5 6; stroke-linecap:round; vector-effect:non-scaling-stroke}
+/* macrame: knotted cord; shapes.js adds the knot layer and the fringe */
+.pc.st-macrame{stroke:rgba(0,0,0,.2); stroke-width:1.6; stroke-linejoin:round; vector-effect:non-scaling-stroke}
+.t.st-felt,.t.st-macrame,.t.st-embroidery{stroke:none}
+/* embroidery: satin-stitch fills (shapes.js), a backstitched outline, a little puff off the linen */
+.pc.st-embroidery{filter:drop-shadow(0 1px .6px rgba(0,0,0,.35)); stroke:rgba(0,0,0,.42); stroke-width:1.5; stroke-dasharray:5 2.4; stroke-linecap:round; vector-effect:non-scaling-stroke}
+.t.st-embroidery{font-family:'Fredoka',sans-serif; font-weight:600; paint-order:stroke; stroke:rgba(0,0,0,.25); stroke-width:.6px; stroke-dasharray:3 1.5}
+
+/* cheat sheet: real commands, click to copy */
+#snips{list-style:none; margin:10px auto 6px; padding:0; max-width:640px; display:grid; gap:10px}
+#snips li{display:grid; grid-template-columns:1fr auto; align-items:center; gap:4px 10px}
+#snips .note{grid-column:1 / -1; font-size:.92rem; line-height:1.35}
+#snips code{
+  display:block; overflow-x:auto; white-space:pre; padding:9px 12px; background:#2b2a28; color:#c9e27a;
+  font:500 .95rem/1.4 'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace; user-select:all; -webkit-user-select:all;
+}
+#snips button{
+  min-width:5.2em; min-height:40px; border:0; cursor:pointer; background:var(--accent); color:var(--ink);
+  font:600 .9rem var(--display); clip-path:polygon(4% 10%, 96% 4%, 98% 92%, 2% 96%);
+}
+#snips button:focus-visible{outline:3px solid var(--ink); outline-offset:2px; clip-path:none}
+#snips button.done{background:#a9cb4f}
+@media (prefers-reduced-motion: reduce){
+  .blink{animation:none}
+  .entering .pc,.pop,.nudge,.shake,.draw,.sheet.turnN,.sheet.turnP{animation:none}
+  .belt,.rej,.rejl{animation-duration:36s}
+}
+</style>
+
+<main class="desk">
+  <h1 class="sr">How to Make a Picture Book</h1>
+  <div class="book">
+    <article class="sheet" id="sheet">
+      <svg id="stage" viewBox="0 0 800 500" role="group" aria-label="Illustration">
+        <defs>
+          <filter id="grain" x="0" y="0" width="100%" height="100%">
+            <feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="3" seed="4"/>
+            <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  .28 0 0 0 -.06"/>
+          </filter>
+          <!-- ink: a hand-drawn wobble on every line -->
+          <filter id="wobble" x="-2%" y="-2%" width="104%" height="104%">
+            <feTurbulence type="fractalNoise" baseFrequency=".022" numOctaves="2" seed="11" result="n"/>
+            <feDisplacementMap in="SourceGraphic" in2="n" scale="3.2" xChannelSelector="R" yChannelSelector="G"/>
+          </filter>
+          <!-- ink: one outline round a group of pieces -->
+          <filter id="outline" x="-10%" y="-10%" width="120%" height="120%">
+            <feMorphology in="SourceAlpha" operator="dilate" radius="2.2" result="d"/>
+            <feFlood flood-color="#1d1b19"/>
+            <feComposite in2="d" operator="in" result="o"/>
+            <feMerge><feMergeNode in="o"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <!-- macrame: rows of half-hitch knots, drawn in shade and highlight so they tint any colour beneath -->
+          <pattern id="knots" width="18" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(-8)">
+            <path d="M-1,8 q5,-9 10,0 q5,9 10,0" fill="none" stroke="rgba(0,0,0,.42)" stroke-width="3.4" stroke-linecap="round"/>
+            <path d="M-1,6.4 q5,-9 10,0 q5,9 10,0" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="1.6" stroke-linecap="round"/>
+            <circle cx="9" cy="8" r="3" fill="rgba(0,0,0,.34)"/><circle cx="8.2" cy="7" r="1.3" fill="rgba(255,255,255,.55)"/>
+          </pattern>
+          <!-- embroidery: satin stitch, long parallel threads with a sheen, at three angles so neighbouring pieces differ -->
+          <pattern id="satin0" width="4.2" height="40" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
+            <rect x="0" y="0" width="1.5" height="40" fill="rgba(0,0,0,.2)"/><rect x="2.1" y="0" width="1.1" height="40" fill="rgba(255,255,255,.32)"/>
+          </pattern>
+          <pattern id="satin1" width="4.2" height="40" patternUnits="userSpaceOnUse" patternTransform="rotate(-40)">
+            <rect x="0" y="0" width="1.5" height="40" fill="rgba(0,0,0,.2)"/><rect x="2.1" y="0" width="1.1" height="40" fill="rgba(255,255,255,.32)"/>
+          </pattern>
+          <pattern id="satin2" width="4.2" height="40" patternUnits="userSpaceOnUse" patternTransform="rotate(82)">
+            <rect x="0" y="0" width="1.5" height="40" fill="rgba(0,0,0,.2)"/><rect x="2.1" y="0" width="1.1" height="40" fill="rgba(255,255,255,.32)"/>
+          </pattern>
+          <!-- embroidery: the linen it is stitched into -->
+          <pattern id="linen" width="5" height="5" patternUnits="userSpaceOnUse">
+            <rect width="5" height="2" fill="rgba(0,0,0,.05)"/><rect width="2" height="5" fill="rgba(255,255,255,.12)"/>
+          </pattern>
+          <!-- felt: fuzzy edges and vertical fibres through every piece -->
+          <filter id="fiber" x="-3%" y="-3%" width="106%" height="106%">
+            <feTurbulence type="fractalNoise" baseFrequency=".05" numOctaves="2" seed="5" result="w"/>
+            <feDisplacementMap in="SourceGraphic" in2="w" scale="5" xChannelSelector="R" yChannelSelector="G" result="d"/>
+            <feTurbulence type="fractalNoise" baseFrequency=".9 .035" numOctaves="2" seed="8" result="f"/>
+            <feColorMatrix in="f" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  -.9 0 0 0 .55" result="fl"/>
+            <feComposite in="fl" in2="d" operator="in" result="fm"/>
+            <feComposite in="d" in2="fm" operator="arithmetic" k1="0" k2="1" k3="-.35" k4="0"/>
+          </filter>
+        </defs>
+        <g id="art" class="art"></g>
+        <rect width="800" height="500" filter="url(#grain)" pointer-events="none"/>
+      </svg>
+      <p id="cap" aria-live="polite"></p>
+      <p id="hint"></p>
+      <ul id="snips" aria-label="Commands to copy" hidden></ul>
+    </article>
+  </div>
+  <nav aria-label="Pages">
+    <button id="prev" type="button" aria-label="Previous page"><svg viewBox="0 0 40 40"><polygon points="27,5 7,20 27,35 24,20"/></svg></button>
+    <span id="count"></span>
+    <button id="next" type="button" aria-label="Next page"><svg viewBox="0 0 40 40"><polygon points="13,5 33,20 13,35 16,20"/></svg></button>
+  </nav>
+</main>
+
+<script>
+/* Cut-paper shapes, palette and tap targets. Every shape is a polygon with slightly off corners. */
+const C={red:'#d5433c',orange:'#ee8130',yellow:'#f5c542',lime:'#a9cb4f',green:'#4c9a52',teal:'#2e9a93',sky:'#a9d5e8',blue:'#3d6fb5',navy:'#243152',purple:'#7c52a5',lilac:'#cdb8e3',pink:'#f0a3b5',kraft:'#d9b38a',brown:'#8b5a3c',ink:'#2b2a28',white:'#f8f4ea',grey:'#9ba1a6',dgrey:'#5a5f66'};
+const P={teal:'#d6ece7',mint:'#cde6c1',pink:'#f8e1e5',kraft:'#eedfc8'}; /* page backgrounds: always paler than the subjects */
+const MC=[C.yellow,C.teal,C.pink,C.orange,C.lime,C.purple,C.red];
+const DEVS=[[C.orange,C.blue],[C.teal,C.navy],[C.purple,C.pink],[C.blue,C.orange],[C.pink,C.purple],[C.yellow,C.green],[C.red,C.navy]];
+
+/* ---------- cut-paper helpers: every shape is a polygon with slightly off corners ---------- */
+const h=(a,b,c)=>{const t=Math.sin(a*12.9898+b*78.233+c*37.719)*43758.5453;return (t-Math.floor(t))*2-1};
+const f=n=>(+n).toFixed(1);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+/* macrame: every piece also gets a layer of knotted cord over its own colour (see #knots in shell.html) */
+/* the style a piece is drawn in rides on its own class (st-ink…), so one page can mix styles */
+const stc=()=>typeof STYLE!=='undefined'&&STYLE!=='paper'?' st-'+STYLE:'';
+/* macrame and embroidery lay a thread texture over each piece's own colour: knots, or satin stitch at one of three angles */
+const knotted=cls=>typeof STYLE!=='undefined'&&(STYLE==='macrame'||STYLE==='embroidery')&&!/gloss|shadow/.test(cls);
+const texture=pts=>STYLE==='macrame'?'knots':'satin'+(Math.abs(Math.round(pts[0][0]*7+pts[0][1]*3))%3);
+const span=pts=>{const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);return Math.max(Math.max(...xs)-Math.min(...xs),Math.max(...ys)-Math.min(...ys))};
+const poly=(pts,fill,cls='',extra='')=>{const P=pts.map(p=>f(p[0])+','+f(p[1])).join(' ');
+  return `<polygon class="pc${stc()} ${cls}" points="${P}" fill="${fill}" ${extra}/>`+(knotted(cls)&&span(pts)>=20?`<polygon class="knot ${cls}" points="${P}" fill="url(#${texture(pts)})"/>`:'')};
+function box0(x,y,w,hh,fill,cls='',extra=''){const J=Math.min(2.4,Math.min(w,hh)*.12);
+  return poly([[x,y],[x+w,y],[x+w,y+hh],[x,y+hh]].map((p,i)=>[p[0]+h(x,y,i)*J,p[1]+h(y,w,i+4)*J]),fill,cls,extra)}
+/* macrame: a big piece hangs a fringe of loose cords from its bottom edge */
+function box(x,y,w,hh,fill,cls='',extra=''){let s=box0(x,y,w,hh,fill,cls,extra);
+  if(knotted(cls)&&STYLE==='macrame'&&w>=80&&hh>=36&&fill!==C.ink)for(let fx=x+6;fx<x+w-4;fx+=10)s+=strip(fx,y+hh-2,fx+h(fx,y,9)*3,y+hh+12+Math.abs(h(fx,w,3))*6,3.6,fill,cls);
+  return s}
+function circ(cx,cy,r,fill,ry=r,cls='',extra=''){const n=clamp(Math.round(r/3)+8,9,20),p=[];
+  for(let i=0;i<n;i++){const a=i/n*6.2832+h(cx,cy,i)*.1,k=1+h(cy,r,i)*.05;p.push([cx+Math.cos(a)*r*k,cy+Math.sin(a)*ry*k])}
+  return poly(p,fill,cls,extra)}
+function strip(x1,y1,x2,y2,w,fill,cls=''){const dx=x2-x1,dy=y2-y1,l=Math.hypot(dx,dy)||1,nx=-dy/l*w/2,ny=dx/l*w/2;
+  return poly([[x1+nx,y1+ny],[x2+nx*.85,y2+ny*.85],[x2-nx,y2-ny],[x1-nx*.9,y1-ny*.9]],fill,cls)}
+function ribbon(pts,w,fill,cls=''){const up=[],dn=[];pts.forEach((p,i)=>{const a=pts[Math.max(0,i-1)],b=pts[Math.min(pts.length-1,i+1)],dx=b[0]-a[0],dy=b[1]-a[1],l=Math.hypot(dx,dy)||1,nx=-dy/l*w/2,ny=dx/l*w/2;up.push([p[0]+nx,p[1]+ny]);dn.unshift([p[0]-nx,p[1]-ny])});
+  return poly(up.concat(dn),fill,cls)}
+const txt=(x,y,s,size,fill,anchor='middle',cls='')=>`<text class="pc t${stc()} ${cls}" x="${x}" y="${y}" font-size="${size}" fill="${fill}" text-anchor="${anchor}">${s}</text>`;
+const line=(d)=>`<path d="${d}" fill="none" stroke="${C.ink}" stroke-width="3" stroke-linecap="round"/>`;
+const check=(x,y,s,col,cls='')=>strip(x-s*.5,y,x-s*.1,y+s*.42,s*.24,col,cls)+strip(x-s*.12,y+s*.42,x+s*.6,y-s*.5,s*.24,col,cls);
+let S={n:0};
+const hot=(label,inner,key='a',extra='')=>`<g class="hot${S.n?'':' nudge'}" data-tap="${key}" tabindex="0" role="button" aria-label="${label}" ${extra}>${inner}</g>`;
+
+
+/* The cast and props shared by every book. */
+function face(x,y,r,col,m='happy',lk=0){let g=circ(x,y,r,col);const ey=y-r*.12;
+  if(m==='sleep'){g+=strip(x-r*.6,ey,x-r*.2,ey,3,C.ink)+strip(x+r*.2,ey,x+r*.6,ey,3,C.ink)+line(`M${f(x-r*.15)},${f(y+r*.45)} h${f(r*.3)}`)}
+  else{for(const s of[-1,1])g+=circ(x+s*r*.4,ey,r*.27,C.white)+circ(x+s*r*.4+lk*r*.1,ey,r*.12,C.ink);
+    if(m==='happy')g+=line(`M${f(x-r*.35)},${f(y+r*.35)} q${f(r*.35)},${f(r*.35)} ${f(r*.7)},0`);
+    else if(m==='flat')g+=line(`M${f(x-r*.3)},${f(y+r*.45)} h${f(r*.6)}`);
+    else if(m==='worry')g+=line(`M${f(x-r*.35)},${f(y+r*.55)} q${f(r*.35)},${f(-r*.3)} ${f(r*.7)},0`);
+    else g+=circ(x,y+r*.5,r*.18,C.ink)}
+  return g}
+function dev(x,y,s,c,o={}){const [hd,bd]=c;let g='';
+  g+=strip(-9,-42,-11,-4,10,C.ink)+strip(9,-42,11,-4,10,C.ink)+box(-21,-7,17,9,C.ink)+box(4,-7,17,9,C.ink);
+  g+=o.up2?strip(-17,-82,-40,-114,9,hd):strip(-17,-82,-36,-54,9,hd);
+  g+=o.up?strip(17,-82,40,-114,9,hd):strip(17,-82,36,-54,9,hd);
+  g+=poly([[-23,-40],[24,-41],[18,-92],[-17,-91]],bd);
+  if(o.tuft)g+=poly([[-10,-130],[2,-150],[4,-132],[14,-146],[12,-128]],bd);
+  g+=face(0,-112,23,hd,o.m,o.look||0);
+  return `<g transform="translate(${x},${y}) scale(${s})" ${o.cls?`class="${o.cls}"`:''}>${g}</g>`}
+function metric(x,y,r,col=C.yellow,cls=''){return `<g class="${cls}">`+circ(x,y,r,col)+circ(x-r*.33,y-r*.12,r*.11,C.ink)+circ(x+r*.33,y-r*.12,r*.11,C.ink)+line(`M${f(x-r*.3)},${f(y+r*.25)} q${f(r*.3)},${f(r*.3)} ${f(r*.6)},0`)+'</g>'}
+function graph(x,y,w,hh,vals,col,o={}){const px0=x+44,px1=x+w-26,py0=y+hh-36,py1=y+26;
+  const X=i=>px0+(px1-px0)*i/(vals.length-1),Y=v=>py0-(py0-py1)*v,pts=vals.map((v,i)=>[X(i),Y(v)]);
+  let s=box(x,y,w,hh,C.white)+strip(x+30,y+16,x+30,py0+8,5,C.ink)+strip(x+26,py0+6,x+w-14,py0+6,5,C.ink);
+  if(!o.noline)s+=ribbon(pts,o.lw||8,col,o.cls||'');
+  return {s,pts,X,Y,px0,px1,py0,py1}}
+function dragon(x,y,fire){let g=poly([[30,-10],[78,-34],[42,-30]],C.green)+box(-8,-10,11,11,C.green)+box(18,-10,11,11,C.green)+circ(10,-30,31,C.green,24)
+  +poly([[4,-46],[46,-90],[36,-40]],C.purple)+poly([[-6,-52],[2,-68],[8,-52]],C.lime)+poly([[10,-54],[19,-70],[25,-52]],C.lime)
+  +circ(-28,-54,17,C.green)+box(-54,-58,24,14,C.green)+circ(-30,-60,5.5,C.white)+circ(-31.5,-60,2.4,C.ink)+poly([[-34,-70],[-28,-84],[-22,-69]],C.lime);
+  if(fire)g+=poly([[-56,-54],[-100,-66],[-84,-51],[-108,-40],[-56,-45]],C.orange,'pop')+poly([[-56,-52],[-82,-55],[-74,-49],[-56,-47]],C.yellow,'pop');
+  return `<g transform="translate(${x},${y})">${g}</g>`}
+function bubble(cx,cy,rx,ry,tx,ty){return `<g class="solid${stc()}">`+circ(cx,cy,rx,C.white,ry)+'</g>'+circ(cx+(tx-cx)*.72,cy+(ty-cy)*.72,15,C.white)+circ(cx+(tx-cx)*.9,cy+(ty-cy)*.9,8,C.white)}
+function heart(x,y,s,col,cls=''){const p=[];for(let i=0;i<26;i++){const t=i/26*6.2832;p.push([x+s*16*Math.sin(t)**3,y-s*(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t))])}return poly(p,col,cls)}
+function arm(y){return strip(830,y+12,585,y,36,C.purple)+circ(578,y,26,C.purple)}
+function rocket(x,y,cls=''){return `<g class="${cls}">`+poly([[x-12,y+4],[x,y+34],[x+12,y+4]],C.yellow)+poly([[x-13,y-18],[x-28,y+6],[x-13,y+2]],C.red)+poly([[x+13,y-18],[x+28,y+6],[x+13,y+2]],C.red)+box(x-13,y-50,26,54,C.white)+poly([[x-14,y-48],[x,y-78],[x+14,y-48]],C.red)+circ(x,y-28,6,C.blue)+'</g>'}
+function book(x,y,w,cls=''){return `<g class="${cls}">`+box(x,y,w,w*1.25,C.white)+strip(x+w*.2,y+w*.3,x+w*.8,y+w*.3,3,C.grey)+strip(x+w*.2,y+w*.55,x+w*.8,y+w*.55,3,C.grey)+strip(x+w*.2,y+w*.8,x+w*.6,y+w*.8,3,C.grey)+'</g>'}
+
+
+/* ---------- book two cast ---------- */
+const AC=[C.teal,C.purple,C.red,C.blue,C.orange,C.lime,C.yellow,C.green,C.navy,C.brown];
+function agent(x,y,s,col,o={}){let g=box(-15,-18,10,18,C.dgrey)+box(5,-18,10,18,C.dgrey)+strip(-22,-52,-37,-30,7,C.dgrey)+(o.up?strip(22,-52,40,-78,7,C.dgrey):strip(22,-52,37,-30,7,C.dgrey))
+  +box(-23,-60,46,44,col)+box(-11,-50,22,13,C.white)+strip(0,-94,0,-108,3,C.dgrey)+circ(0,-111,5,C.red)+box(-19,-94,38,32,C.white);
+  const lk=(o.look||0)*2;g+=circ(-8+lk,-80,4.5,C.ink)+circ(8+lk,-80,4.5,C.ink)+(o.m==='flat'?strip(-6,-69,6,-69,2.5,C.ink):line('M-6,-71 q6,5 12,0'));
+  return `<g transform="translate(${x},${y}) scale(${s})" ${o.cls?`class="${o.cls}"`:''}>${g}</g>`}
+function pr(x,y,w,cls='',mark=''){let s=box(x,y,w,w*1.2,C.white);for(let i=0;i<4;i++){const yy=y+w*.25+i*w*.22;s+=strip(x+w*.15,yy,x+w*(.55+.3*Math.abs(h(i,3,3))),yy,w*.07,i%3===2?C.red:C.green)}
+  return `<g class="${cls}">${s}${mark}</g>`}
+const mk=(x,y,s,size,rot=-3,cls='')=>`<text class="${cls}" x="${x}" y="${y}" font-size="${size}" fill="#c4161c" transform="rotate(${rot} ${x} ${y})" style="font-family:'Permanent Marker','Marker Felt','Comic Sans MS',cursive;pointer-events:none">${s}</text>`;
+const wavy=(x,y,cls='')=>`<path class="${cls}" d="M${x},${y} q150,-12 ${(790-x)/2},0 t${(790-x)/2},-4" fill="none" stroke="#c4161c" stroke-width="8" stroke-linecap="round"/>`;
+function sun(sx,sy){let s='';for(let i=0;i<8;i++){const a=i*.785;s+=poly([[sx+Math.cos(a-.2)*50,sy+Math.sin(a-.2)*50],[sx+Math.cos(a)*72,sy+Math.sin(a)*72],[sx+Math.cos(a+.2)*50,sy+Math.sin(a+.2)*50]],C.orange)}return s+circ(sx,sy,42,C.yellow)}
+
+
+/* ---------- words in the art: speech bubbles and terminals ---------- */
+const xe=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const pbWarn=m=>{if(typeof __warn==='function')__warn(m)};        /* check collects these; the browser ignores them */
+const textW=(s,size,mono)=>String(s).length*size*(mono?.6:.54);   /* an estimate: check has no fonts */
+function wrapWords(s,w,size){const out=[];let cur='';
+  for(const wd of String(s).split(/\s+/).filter(Boolean)){const t=cur?cur+' '+wd:wd;if(cur&&textW(t,size)>w){out.push(cur);cur=wd}else cur=t}
+  if(cur)out.push(cur);return out}
+/* Speech bubble centred on (x,y); the tail points at the speaker's mouth (o.tx,o.ty). */
+function say(x,y,text,o={}){const size=o.size||22,lh=size*1.18,L=wrapWords(text,o.w||200,size);
+  const words=String(text).split(/\s+/).filter(Boolean).length;
+  if(words>10)pbWarn(`bubble has ${words} words (max 10): "${text}"`);
+  if(L.length>3)pbWarn(`bubble wraps to ${L.length} lines (max 3): "${text}"`);
+  const tw=Math.max(...L.map(l=>textW(l,size))),rx=tw/2/.82+18,ry=L.length*lh/2/.74+20;
+  const tx=o.tx??x-rx*.4,ty=o.ty??y+ry+50,a=Math.atan2((ty-y)/ry,(tx-x)/rx);
+  let g=`<g class="solid${stc()}">`+poly([[x+Math.cos(a-.28)*rx*.8,y+Math.sin(a-.28)*ry*.8],[tx,ty],[x+Math.cos(a+.28)*rx*.8,y+Math.sin(a+.28)*ry*.8]],o.col||C.white);
+  if(o.shout){const p=[],n=22;for(let i=0;i<n;i++){const t=i/n*6.2832,k=i%2?1.18:.96;p.push([x+Math.cos(t)*rx*k,y+Math.sin(t)*ry*k])}g+=poly(p,o.col||C.white)}
+  else g+=circ(x,y,rx,o.col||C.white,ry);
+  g+='</g>';
+  const y0=y-(L.length-1)*lh/2+size*.36;
+  g+=`<text class="t${stc()}" x="${f(x)}" y="${f(y0)}" font-size="${size}" fill="${C.ink}" text-anchor="middle">`+L.map((l,i)=>`<tspan x="${f(x)}" dy="${i?f(lh):0}">${xe(l)}</tspan>`).join('')+'</text>';
+  return `<g class="${o.cls||''}">${g}</g>`}
+/* Terminal card. Lines starting with "$ " are commands (lime); the rest are output (white).
+   o.upto shows only the first N lines, so each tap can type the next one. */
+function term(x,y,w,hh,lines,o={}){const size=o.size||18,lh=size*1.45,n=clamp(o.upto??lines.length,0,lines.length);
+  let s=box(x,y,w,hh,C.ink)+box(x,y,w,26,C.dgrey);[0,1,2].forEach(i=>s+=circ(x+18+i*20,y+13,5.5,[C.red,C.yellow,C.lime][i]));
+  if(o.title)s+=`<text class="mono" x="${x+w/2}" y="${y+18}" font-size="13" fill="${C.white}" text-anchor="middle">${xe(o.title)}</text>`;
+  if(lines.length*lh+36>hh)pbWarn(`terminal holds ${lines.length} lines but is only ${hh} tall`);
+  lines.forEach((l,i)=>{const cmd=l.startsWith('$ ');if(cmd&&typeof __cmd==='function')__cmd(l.slice(2));
+    if(textW(l,size,1)>w-28)pbWarn(`terminal line too wide for ${w}px at size ${size}: "${l}"`);
+    if(i<n)s+=`<text class="mono${i===n-1&&o.upto!=null?' pop':''}" x="${x+14}" y="${f(y+34+size+i*lh)}" font-size="${size}" fill="${cmd?C.lime:C.white}">${xe(l)}</text>`});
+  if(o.cursor!==false){const r=Math.max(n-1,0),cy=y+34+size+r*lh,cx=x+14+(n?textW(lines[n-1],size,1)+4:0);s+=box(cx,cy-size*.8,size*.55,size,C.lime,'blink')}
+  return `<g class="${o.cls||''}">${s}</g>`}
+
+
+/* ---------- Getting Started cast ---------- */
+/* The Repo: a cardboard box with a face. Feet at (x,y), about 100 wide and 100 tall at s=1.
+   o.awake opens its eyes; o.page shows a page sticking out of the top; o.folder a yellow folder. */
+function repo(x,y,s,o={}){let g=poly([[-50,-80],[-74,-104],[-24,-98],[0,-80]],C.brown)+poly([[50,-80],[74,-104],[24,-98],[0,-80]],C.brown);
+  if(o.page)g+=box(-22,-128,44,56,C.white)+strip(-14,-114,14,-114,3,C.grey)+strip(-14,-102,10,-102,3,C.grey);
+  if(o.folder)g+=box(-34,-126,24,12,C.yellow)+box(-34,-118,68,48,C.yellow);
+  g+=box(-50,-80,100,80,C.kraft)+box(-6,-80,12,26,C.yellow);
+  const lk=(o.look||0)*3;
+  if(o.awake)g+=circ(-20,-40,8,C.white)+circ(-20+lk,-40,3.6,C.ink)+circ(20,-40,8,C.white)+circ(20+lk,-40,3.6,C.ink)+(o.m==='wow'?circ(0,-20,5,C.ink):line('M-9,-22 q9,7 18,0'));
+  else g+=strip(-27,-40,-13,-40,3,C.ink)+strip(13,-40,27,-40,3,C.ink);
+  return `<g transform="translate(${x},${y}) scale(${s})" ${o.cls?`class="${o.cls}"`:''}>${g}</g>`}
+/* A save (commit), drawn as an instant photo. */
+function photo(x,y,w,col=C.sky,cls='',label=''){return `<g class="${cls}">`+box(x,y,w,w*1.18,C.white)+box(x+w*.1,y+w*.1,w*.8,w*.72,col)+box(x+w*.36,y+w*.26,w*.28,w*.38,C.white)+(label?mk(x+w*.1,y+w*1.07,label,w*.13,-2):'')+'</g>'}
+/* The remote: a paper cloud labelled origin, centred on (x,y). */
+function cloud(x,y,cls=''){return `<g class="${cls}"><g class="solid${stc()}">`+circ(x-48,y+6,38,C.white)+circ(x,y-16,50,C.white)+circ(x+52,y+4,40,C.white)+box(x-80,y+4,164,40,C.white)+'</g>'+txt(x,y+30,'origin',24,C.ink)+'</g>'}
+
+
+/* ---------- casts: who plays each role ----------
+   A cast is a set of replacements for the role helpers below, with the same arguments, the same
+   feet point and about the same height, so every scene works with every cast. Cast files live in
+   engine/runtime/casts/ and register themselves in CASTS. Styles (paper, ink, felt) are CSS only. */
+const ROLES={dev,face,agent,metric,repo,cloud,photo,rocket,book};
+const CASTS={paper:{}};
+const STYLES=['paper','ink','felt','macrame','embroidery'];
+let CAST='paper',STYLE='paper';
+/* Draw part of a scene in another style and cast: as('ink','toys',()=>dev(...)). */
+function as(style,cast,fn){const s0=STYLE,c0=CAST;STYLE=STYLES.includes(style)?style:s0;useCast(cast||c0);let out;
+  try{out=fn()}finally{const st=STYLE;STYLE=s0;useCast(c0);out=`<g class="sty-${st}">${out}</g>`}return out}
+function useCast(name){CAST=CASTS[name]?name:'paper';const k={...ROLES,...CASTS[CAST]};
+  dev=k.dev;face=k.face;agent=k.agent;metric=k.metric;repo=k.repo;cloud=k.cloud;photo=k.photo;rocket=k.rocket;book=k.book}
+
+
+/* ---------- the toy cast: toys acting out the roles ----------
+   Same arguments, feet point and height as the paper cast, so any scene can be played by toys.
+   Generic toy types only: peg dolls, a tin wind-up robot, a toy chest, a bouncy ball. */
+const WOOD='#e9c793',WOOD2='#b98a5a',TIN='#c9ced3';
+const shadowAt=(x,y,rx)=>circ(x,y,rx,'#000',rx*.22,'shadow');
+const gloss=(x,y,r,ry)=>circ(x,y,r,'#fff',ry??r,'gloss');
+/* A painted wooden head: the character's colour is the painted hair cap. */
+function toyFace(x,y,r,col,m='happy',lk=0){let g=ROLES.face(x,y,r,WOOD,m,lk);const p=[];
+  for(let i=0;i<=12;i++){const a=Math.PI*(1.06+i/12*.88);p.push([x+Math.cos(a)*r*1.04,y+Math.sin(a)*r*1.04])}
+  p.push([x+r*.7,y-r*.5],[x+r*.25,y-r*.62],[x-r*.2,y-r*.5],[x-r*.7,y-r*.56]);
+  return g+poly(p,col)+gloss(x-r*.42,y-r*.62,r*.2,r*.13)}
+CASTS.toys={
+  face:toyFace,
+  /* The Dev: a wooden peg doll on a round stand, with dowel arms. */
+  dev(x,y,s,c,o={}){const [hd,bd]=c;let g=shadowAt(0,0,30)+circ(0,-5,25,WOOD2,7);
+    const arm=(sx,up)=>up?strip(sx*15,-80,sx*36,-114,8,WOOD)+circ(sx*37,-117,6,WOOD):strip(sx*15,-80,sx*31,-50,8,WOOD)+circ(sx*32,-47,6,WOOD);
+    g+=arm(-1,o.up2)+arm(1,o.up);
+    g+=poly([[-27,-9],[27,-9],[21,-58],[14,-86],[-14,-86],[-21,-58]],bd)+strip(-24,-26,24,-26,6,'#fff','gloss')+gloss(-10,-66,4,14);
+    g+=box(-9,-93,18,9,WOOD)+toyFace(0,-114,23,hd,o.m,o.look||0);
+    return `<g transform="translate(${x},${y}) scale(${s})" ${o.cls?`class="${o.cls}"`:''}>${g}</g>`},
+  /* The Agent: a tin wind-up robot on wheels, key in its back. */
+  agent(x,y,s,col,o={}){let g=shadowAt(0,0,30)+circ(-13,-7,8,C.dgrey)+circ(13,-7,8,C.dgrey)+circ(-13,-7,3,TIN)+circ(13,-7,3,TIN);
+    g+=strip(-24,-42,-38,-42,5,C.dgrey)+poly([[-38,-42],[-48,-52],[-48,-32]],C.dgrey)+poly([[-38,-42],[-28,-55],[-28,-29]].map(([a,b])=>[a-20,b]),C.dgrey);
+    g+=strip(-22,-52,-36,-28,8,TIN)+(o.up?strip(22,-52,40,-80,8,TIN)+circ(41,-83,6,C.dgrey):strip(22,-52,36,-28,8,TIN)+circ(37,-25,6,C.dgrey));
+    g+=box(-24,-64,48,52,col);[[-18,-58],[18,-58],[-18,-18],[18,-18]].forEach(([a,b])=>g+=circ(a,b,2.6,TIN));
+    g+=circ(0,-38,9,C.white)+strip(0,-38,5,-44,2,C.red)+strip(-16,-60,-16,-22,4,'#fff','gloss');
+    g+=strip(0,-96,0,-108,3,C.dgrey)+circ(0,-111,5,C.red)+box(-19,-96,38,32,TIN);
+    const lk=(o.look||0)*2;g+=circ(-8+lk,-84,5,C.ink)+circ(8+lk,-84,5,C.ink)+gloss(-6.5+lk,-85.5,1.6)+gloss(9.5+lk,-85.5,1.6);
+    g+=o.m==='flat'?strip(-7,-72,7,-72,3,C.ink):[-6,0,6].map(d=>strip(d,-75,d,-69,2,C.ink)).join('');
+    return `<g transform="translate(${x},${y}) scale(${s})" ${o.cls?`class="${o.cls}"`:''}>${g}</g>`},
+  /* The Metric: a bouncy ball with a stripe and a face. */
+  metric(x,y,r,col=C.yellow,cls=''){return `<g class="${cls}">`+shadowAt(x,y+r*1.05,r*.8)+circ(x,y,r,col)+strip(x-r*.95,y+r*.35,x+r*.95,y+r*.35,r*.22,'#fff')
+    +circ(x-r*.33,y-r*.12,r*.11,C.ink)+circ(x+r*.33,y-r*.12,r*.11,C.ink)+line(`M${f(x-r*.22)},${f(y+r*.08)} q${f(r*.22)},${f(r*.18)} ${f(r*.44)},0`)+gloss(x-r*.45,y-r*.5,r*.2,r*.13)+'</g>'},
+  /* The Repo: a painted toy chest with its lid open. */
+  repo(x,y,s,o={}){let g=shadowAt(0,0,58)+poly([[-52,-80],[52,-80],[62,-116],[-42,-116]],'#a8322c')+strip(-46,-104,56,-104,5,WOOD);
+    if(o.page)g+=box(-22,-128,44,56,C.white)+strip(-14,-114,14,-114,3,C.grey)+strip(-14,-102,10,-102,3,C.grey);
+    if(o.folder)g+=box(-34,-126,24,12,C.yellow)+box(-34,-118,68,48,C.yellow);
+    g+=box(-52,-80,104,80,C.red)+box(-52,-80,104,10,WOOD)+box(-52,-10,104,10,WOOD);
+    [[-52,-80],[44,-80],[-52,-8],[44,-8]].forEach(([a,b])=>g+=box(a,b,8,8,TIN));
+    g+=strip(-40,-64,-40,-20,4,'#fff','gloss');
+    const lk=(o.look||0)*3;
+    if(o.awake)g+=circ(-20,-44,9,C.white)+circ(-20+lk,-44,4,C.ink)+circ(20,-44,9,C.white)+circ(20+lk,-44,4,C.ink)+(o.m==='wow'?circ(0,-24,5,C.ink):line('M-9,-26 q9,7 18,0'));
+    else g+=strip(-27,-44,-13,-44,3,C.ink)+strip(13,-44,27,-44,3,C.ink);
+    return `<g transform="translate(${x},${y}) scale(${s})" ${o.cls?`class="${o.cls}"`:''}>${g}</g>`},
+  /* The remote: a cotton-wool cloud on a stick, with a wooden sign. */
+  cloud(x,y,cls=''){let g=strip(x,y+40,x,y+150,6,WOOD2)+`<g class="solid${stc()}">`;
+    [[-56,8,26],[-30,-14,30],[4,-26,34],[38,-12,30],[60,10,24],[-20,14,30],[22,14,30]].forEach(([a,b,r])=>g+=circ(x+a,y+b,r,C.white));
+    return `<g class="${cls}">`+g+'</g>'+box(x-50,y+28,100,32,WOOD)+txt(x,y+51,'origin',22,C.ink)+'</g>'},
+};
+
+
+/* ---------- make-book helpers ---------- */
+/* A wide terminal across the top. n = how many lines are showing. */
+const wide=(lines,n,o={})=>hot(o.label||'Type the command',term(30,24,740,36+lines.length*21.8+18,lines,{upto:n,size:15,title:o.title||'picture-books'}));
+/* The four players, side by side; s(i) and c(i) pick each one's style and cast. */
+const PLAY=[(x)=>dev(x,470,1.25,DEVS[0],{m:'happy',look:1}),(x)=>agent(x,470,1.3,C.orange,{look:-1}),(x)=>repo(x,470,.95,{awake:true}),(x)=>metric(x,420,40,C.yellow)];
+function players(s,c,x0=150,dx=170,o={}){return PLAY.map((p,i)=>as(s(i),c(i),()=>p(x0+i*dx))).join('')}
+/* A recipe card with handwritten lines. */
+function card(x,y,w,hh,lines,k=lines.length){let s=box(x,y,w,hh,C.white)+strip(x+14,y+40,x+w-14,y+40,3,C.pink);
+  lines.slice(0,k).forEach((l,i)=>s+=mk(x+20,y+76+i*38,l,24,-2,i===k-1?'pop':''));return s}
+/* The big round button. */
+const bigButton=(x,y,down)=>circ(x,y+18,58,C.dgrey,24)+circ(x,y+(down?10:0),50,C.red,22)+txt(x,y+(down?18:8),'MIX',26,C.white);
+
+
+const BOOK={"style":"paper","cast":"paper"};
+/* ---------- the pages, in cut order ---------- */
+const SC=[
+/* cover */ Object.assign({name:"cover"},
+({
+  cap: "A recipe for picture books like this one, in every style this repo can draw.",
+  hint: "Tap the button, or turn the page.",
+}),
+({
+  bg: P.mint,
+  tap: ()=>go(1,1),
+  draw(){const S5=['paper','ink','felt','macrame'];
+    return txt(400,86,'How to Make',58,C.ink)+txt(400,156,'a Picture Book',62,C.red)+players(i=>S5[i],i=>i%2?'toys':'paper',150,170)+hot('Start the recipe',bigButton(740,230,false))},
+})),
+
+/* ingredients */ Object.assign({name:"ingredients"},
+({
+  cap: "You’ll need a repo, Claude Code, and an idea.",
+  hint: "Tap the card.",
+}),
+({
+  bg: P.pink,
+  draw(S){const n=Math.min(S.n,3);
+    return dev(150,470,1.5,DEVS[0],{m:n===3?'wow':'happy',look:1})+hot('Add an ingredient',card(300,90,300,250,['You’ll need:','a repo','Claude Code','an idea'],n+1))
+      +(n>0?repo(680,470,.9,{awake:true,look:-1,cls:'pop'}):'')+(n>1?agent(700,330,.9,C.orange,{look:-1,cls:'pop'}):'')+(n>2?circ(700,140,30,C.yellow,30,'pop')+box(690,168,20,16,C.grey,'pop'):'')},
+})),
+
+/* clone */ Object.assign({name:"clone"},
+({
+  cap: "First, get the repo.",
+  hint: "Tap the terminal.",
+}),
+({
+  bg: C.sky,
+  style: 'ink',
+  draw(S){const n=Math.min(S.n,2);
+    return wide(['$ git clone https://github.com/patdmc/picture-books.git','$ cd picture-books'],n)+dev(200,470,1.5,DEVS[0],{m:n?'happy':'flat',look:1})+(n?repo(420,470,1.2,{awake:true,look:-1,cls:'pop'}):'')},
+})),
+
+/* skills */ Object.assign({name:"skills"},
+({
+  cap: "Next, teach Claude the recipe.",
+  hint: "Tap the terminal.",
+}),
+({
+  bg: P.teal,
+  cast: 'toys',
+  draw(S){const n=Math.min(S.n,2);
+    return wide(['$ mkdir -p ~/.claude/skills','$ ln -s "$PWD/skills/picture-book" ~/.claude/skills/picture-book'],n)
+      +dev(180,470,1.5,DEVS[0],{m:'happy',look:1})+agent(560,470,1.6,C.orange,{look:-1,up:n>1})+(n>1?book(410,250,70,'pop')+say(600,180,'I know how now!',{tx:570,ty:280,cls:'pop'}):'')},
+})),
+
+/* ask */ Object.assign({name:"ask"},
+({
+  cap: "Then ask for a book, in your own words.",
+  hint: "Tap the terminal.",
+}),
+({
+  bg: P.mint,
+  style: 'felt',
+  draw(S){const n=Math.min(S.n,2);
+    return wide(['> /picture-book a story about a cat who learns git','Here is the plan, before I make anything.'],[0,1,2][n],{title:'claude'})
+      +dev(180,470,1.5,DEVS[0],{m:'happy',look:1})+agent(560,470,1.6,C.orange,{look:-1,up:n>1})+(n>1?metric(380,330,34,C.yellow,'pop'):'')},
+})),
+
+/* words-first */ Object.assign({name:"words-first"},
+({
+  cap: "Claude writes the words first, and waits until you like them.",
+  hint: "Tap the Dev to say yes.",
+}),
+({
+  bg: C.lilac,
+  style: 'macrame',
+  draw(S){const n=Math.min(S.n,1);
+    return card(380,40,360,300,['1. If you give a cat…','2. they’re gonna…','3. so they’ll want…','4. And then…'])+(n?check(700,80,60,C.green,'pop'):'')
+      +agent(300,470,1.4,C.orange,{look:1})+hot('Say yes to the words',dev(140,470,1.5,DEVS[0],{m:n?'wow':'happy',look:1,up:n>0}))
+      +(n?say(160,120,'Yes! Go!',{tx:150,ty:260,cls:'pop'}):'')},
+})),
+
+/* two-files */ Object.assign({name:"two-files"},
+({
+  cap: "Every page is two files: the words, and the picture.",
+  hint: "Tap a file.",
+}),
+({
+  bg: P.kraft,
+  style: 'embroidery',
+  tap(S,k){S.n++;S.k=k},
+  draw(S){const k=S.k;
+    const f=(x,name,lines,key)=>hot('Open '+name,box(x,90,280,230,C.white)+box(x+12,76,150,30,key==='w'?C.pink:C.sky)+txt(x+87,98,name,18,C.ink)
+      +lines.map((l,i)=>'<text class="mono" x="'+(x+18)+'" y="'+(140+i*26)+'" font-size="14" fill="'+C.ink+'">'+xe(l)+'</text>').join('')+(k===key?check(x+240,300,40,C.green,'pop'):''),key);
+    return f(90,'lines.js',['({','  cap: \'The words.\',','  hint: \'Tap the cat.\',','})'],'w')
+      +f(430,'scene.js',['({','  bg: C.sky,','  draw(S) {','    return cat(…)','  },','})'],'p')
+      +dev(400,490,1,DEVS[0],{m:k?'wow':'happy'})},
+})),
+
+/* check */ Object.assign({name:"check"},
+({
+  cap: "Check it, so every page draws in every style.",
+  hint: "Tap the terminal.",
+}),
+({
+  bg: C.sky,
+  cast: 'toys',
+  draw(S){const n=Math.min(S.n,2);
+    return wide(['$ node engine/cli/picture-book.js check my-book','ok: 14 spreads (cover + 13 pages)'],[0,1,2][n])
+      +players(()=> 'paper',()=> 'toys',180,150)+(n>1?check(700,240,60,C.green,'pop'):'')},
+})),
+
+/* style */ Object.assign({name:"style"},
+({
+  cap: "Pick a style for the whole book.",
+  hint: "Tap the players.",
+}),
+({
+  bg: P.mint,
+  draw(S){const st=STYLES[S.n%STYLES.length];
+    return hot('Try the next style',players(()=>st,()=> 'paper',150,170))+mk(330,140,st,46,-4,'pop')},
+})),
+
+/* cast */ Object.assign({name:"cast"},
+({
+  cap: "Pick a cast, too.",
+  hint: "Tap the players.",
+}),
+({
+  bg: P.pink,
+  draw(S){const c=S.n%2?'toys':'paper';
+    return hot('Swap the cast',players(()=> 'paper',()=>c,150,170))+mk(330,140,c==='toys'?'toys':'paper people',42,-4,'pop')},
+})),
+
+/* mixer */ Object.assign({name:"mixer"},
+({
+  cap: "Or press the big button and mix them all, until everything lines up.",
+  hint: "Press MIX.",
+}),
+({
+  bg: P.teal,
+  draw(S){const n=Math.min(S.n,4),done=n===4,L=STYLES.length;
+    const s=i=>STYLES[(i+n*(i+1))%L],c=i=>done?'toys':(n+i)%2?'toys':'paper';
+    let o=players(s,c,110,150);for(let i=0;i<4;i++)o+=mk(62+i*150,150,s(i),17,-3);
+    return o+hot('Mix the styles and casts',bigButton(700,250,S.n%2===1))+(done?say(430,62,'All lined up!',{tx:470,ty:118,shout:true,col:C.yellow,cls:'pop'}):'')},
+})),
+
+/* editor */ Object.assign({name:"editor"},
+({
+  cap: "Then fix anything in the editor, or ask Claude to.",
+  hint: "Tap the terminal.",
+}),
+({
+  bg: C.lilac,
+  style: 'ink',
+  cast: 'toys',
+  draw(S){const n=Math.min(S.n,2);
+    const ed=box(250,150,520,230,C.white)+box(262,162,140,206,P.kraft)+box(414,162,220,140,C.sky)+box(414,312,220,56,C.ink)+box(646,162,112,206,P.pink)
+      +[0,1,2,3].map(i=>box(270,172+i*48,124,38,i===1?C.yellow:C.white)).join('')+txt(330,145,'script',18,C.ink)+txt(524,145,'preview',18,C.ink)+txt(702,145,'Claude',18,C.ink);
+    return wide(['$ node engine/cli/picture-book.js edit','Picture book editor: http://localhost:4800/'],[0,1,2][n])
+      +(n>1?'<g class="pop">'+ed+'</g>'+say(150,195,'Make the robot worried.',{tx:122,ty:292,w:160,size:20,cls:'pop'}):'')+dev(120,470,1.4,DEVS[0],{m:'happy',look:1})},
+})),
+
+/* publish */ Object.assign({name:"publish"},
+({
+  cap: "Finally, put it on the shelf for everyone.",
+  hint: "Tap the terminal.",
+}),
+({
+  bg: P.kraft,
+  style: 'felt',
+  cast: 'toys',
+  draw(S){const n=Math.min(S.n,2);
+    return wide(['$ node engine/cli/picture-book.js build --all --pages','$ git push'],n)
+      +box(330,300,420,20,C.brown)+[0,1,2,3].map(i=>box(350+i*64,214,52,86,[C.sky,C.lilac,C.yellow,C.pink][i])).join('')+(n>1?box(606,214,52,86,C.red,'pop'):'')
+      +dev(160,470,1.5,DEVS[0],{m:n>1?'wow':'happy',look:1,up:n>1})},
+})),
+
+/* served */ Object.assign({name:"served"},
+({
+  cap: "And there it is: a picture book, fresh out of the oven.",
+  hint: "Tap the book.",
+}),
+({
+  bg: P.mint,
+  draw(S){const n=Math.min(S.n,1);
+    return players(i=>STYLES[i+1],i=>i%2?'paper':'toys',130,170)+circ(560,150,120,C.white,34)
+      +hot('Open the book',box(500,70,120,90,C.red)+box(508,78,104,74,C.white)+txt(560,124,n?'The End':'my book',20,C.ink))+(n?heart(470,90,1.4,C.pink,'pop')+heart(650,90,1.4,C.pink,'pop'):'')},
+})),
+
+/* cheat-sheet */ Object.assign({name:"cheat-sheet"},
+({
+  cap: "Here’s the whole recipe.",
+  hint: "Copy any command. Tap the button to start again.",
+  commands: [
+    { cmd: "git clone https://github.com/patdmc/picture-books.git", note: "Get the repo." },
+    { cmd: "cd picture-books", note: "Go into it." },
+    { cmd: "mkdir -p ~/.claude/skills", note: "Make sure your personal skills folder exists." },
+    { cmd: "ln -s \"$PWD/skills/picture-book\" ~/.claude/skills/picture-book", note: "Teach Claude Code the picture-book recipe." },
+    { cmd: "ln -s \"$PWD/skills/picture-book-revise\" ~/.claude/skills/picture-book-revise", note: "And the one for changing a finished book." },
+    { cmd: "claude", note: "Start Claude Code in the repo." },
+    { cmd: "/picture-book a story about a cat who learns git", note: "Type this inside Claude Code, with your own idea." },
+    { cmd: "node engine/cli/picture-book.js check my-book", note: "Draw every page in every style and cast, and report problems. Use your book’s folder name." },
+    { cmd: "node engine/cli/picture-book.js contact my-book", note: "Every page on one sheet, in site/my-book/. Add ?style=ink&cast=toys to the address." },
+    { cmd: "node engine/cli/picture-book.js edit", note: "The editor, at http://localhost:4800: reorder pages, edit words, ask Claude." },
+    { cmd: "node engine/cli/picture-book.js build --all --pages", note: "Build the site into docs/." },
+    { cmd: "git push", note: "Publish it, if your repo serves GitHub Pages from main:/docs." },
+  ],
+}),
+({
+  bg: P.pink,
+  tap: ()=>go(1,1),
+  draw(){return players(i=>STYLES[(i*2)%STYLES.length],i=>i%2?'toys':'paper',110,150)+hot('Start the recipe again',bigButton(700,250,false))},
+}))
+];
+
+/* ---------- the book ---------- */
+const $=id=>document.getElementById(id),stage=$('stage'),art=$('art'),sheet=$('sheet');
+let idx=0,drag=null,moved=false,swipe=null,enterT=0;
+/* style and cast: ?style= and ?cast= win, then the page's own, then the book's, then paper */
+let Q;try{Q=new URLSearchParams(location.search)}catch(_){Q=new URLSearchParams()}
+function dress(sc){const st=Q.get('style')||sc.style||BOOK.style;STYLE=STYLES.includes(st)?st:'paper';useCast(Q.get('cast')||sc.cast||BOOK.cast);
+  try{document.documentElement.dataset.style=STYLE;document.documentElement.dataset.cast=CAST}catch(_){}}
+function render(enter,focusKey){const sc=SC[idx];dress(sc);
+  art.innerHTML=`<rect width="800" height="500" fill="${sc.bg}"/>`+(STYLE==='embroidery'?'<rect width="800" height="500" fill="url(#linen)"/>':'')+sc.draw(S);
+  if(enter){$('cap').textContent=sc.cap;$('hint').textContent=sc.hint;
+    $('count').textContent=idx?`page ${idx} of ${SC.length-1}`:'cover';$('prev').disabled=!idx;
+    $('next').setAttribute('aria-label',idx===SC.length-1?'Start the story again':'Next page');snips(sc.commands);
+    art.querySelectorAll('.pc,.knot').forEach((e,i)=>e.style.setProperty('--i',i));
+    stage.classList.add('entering');clearTimeout(enterT);enterT=setTimeout(()=>stage.classList.remove('entering'),1600)}
+  else stage.classList.remove('entering');
+  if(focusKey){const e=art.querySelector(`[data-tap="${focusKey}"]`);if(e)e.focus()}}
+/* cheat sheet: a page whose lines.js has commands:[{cmd,note}] lists them under the caption, each with a copy button */
+function copyText(s){if(navigator.clipboard&&window.isSecureContext)return navigator.clipboard.writeText(s).catch(()=>copyOld(s));return Promise.resolve(copyOld(s))}
+function copyOld(s){const t=document.createElement('textarea');t.value=s;t.setAttribute('readonly','');t.style.cssText='position:fixed;opacity:0;top:0;left:0';
+  document.body.appendChild(t);t.select();let ok=false;try{ok=document.execCommand('copy')}catch(_){}t.remove();if(!ok)throw new Error('copy blocked')}
+function snips(list){const ul=$('snips');ul.textContent='';ul.hidden=!(list&&list.length);if(ul.hidden)return;
+  for(const {cmd,note} of list){const li=document.createElement('li'),code=document.createElement('code'),b=document.createElement('button');
+    if(note){const p=document.createElement('span');p.className='note';p.textContent=note;li.appendChild(p)}
+    code.textContent=cmd;b.type='button';b.textContent='Copy';b.setAttribute('aria-label','Copy '+cmd);
+    b.addEventListener('click',()=>{let t;copyText(cmd).then(()=>{b.textContent='Copied';b.classList.add('done')},()=>{b.textContent='Select it';const r=document.createRange();r.selectNodeContents(code);const sel=getSelection();sel.removeAllRanges();sel.addRange(r)})
+      .finally(()=>{clearTimeout(t);t=setTimeout(()=>{b.textContent='Copy';b.classList.remove('done')},1500)})});
+    li.append(code,b);ul.appendChild(li)}}
+function go(i,dir){if(i<0)return;idx=i>=SC.length?1:i;S={n:0};
+  sheet.classList.remove('turnN','turnP');void sheet.offsetWidth;sheet.classList.add(dir<0?'turnP':'turnN');render(true)}
+function tap(key,kb){const sc=SC[idx];sc.tap?sc.tap(S,key):S.n++;if(SC[idx]===sc)render(false,kb&&key)}
+
+stage.addEventListener('click',e=>{if(moved){moved=false;return}const t=e.target.closest('[data-tap]');if(t)tap(t.dataset.tap)});
+stage.addEventListener('keydown',e=>{const t=e.target.closest('[data-tap]');if(t&&(e.key==='Enter'||e.key===' ')){e.preventDefault();e.stopPropagation();tap(t.dataset.tap,true)}});
+stage.addEventListener('pointerdown',e=>{moved=false;if(e.target.closest('[data-drag]')){drag=true;try{stage.setPointerCapture(e.pointerId)}catch(_){}}else swipe={x:e.clientX,y:e.clientY}});
+stage.addEventListener('pointermove',e=>{if(!drag)return;const r=stage.getBoundingClientRect();moved=true;S.n=1;
+  SC[idx].drag(S,(e.clientX-r.left)/r.width*800,(e.clientY-r.top)/r.height*500);render(false)});
+const end=e=>{if(swipe&&e.type==='pointerup'){const dx=e.clientX-swipe.x,dy=e.clientY-swipe.y;if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.5){moved=true;go(idx+(dx<0?1:-1),dx<0?1:-1);setTimeout(()=>moved=false,50)}}drag=null;swipe=null};
+stage.addEventListener('pointerup',end);stage.addEventListener('pointercancel',end);
+$('next').addEventListener('click',()=>go(idx+1,1));$('prev').addEventListener('click',()=>go(idx-1,-1));
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')go(idx+1,1);else if(e.key==='ArrowLeft')go(idx-1,-1)});
+
+/* ?page=N opens that page (the editor's preview uses it) */
+const start=d=>{idx=clamp((Q.has('page')?+Q.get('page'):(d&&d.idx))|0,0,SC.length-1);S={n:0};render(true)};
+try{window.claude?.hot?.snapshot?.(()=>({idx}))}catch(_){}
+window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});
+
+</script>
+
+</body></html>

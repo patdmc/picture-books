@@ -5,4 +5,5 @@
   'agent-request',
   'dev-repo',
   'skill-repo',
+  'make-book',
 ])
