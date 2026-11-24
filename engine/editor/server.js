@@ -13,6 +13,15 @@ const CUT_HEAD = '// The pages, in story order. Reorder, add or drop a page here
 const writeCut = (b, pages) => fs.writeFileSync(path.join(BOOKS, b, 'cut.js'), CUT_HEAD + '([\n' + pages.map(p => `  '${p}',\n`).join('') + '])\n');
 const STR = q => `(${q === "'" ? "'(?:[^'\\\\\\n]|\\\\.)*'" : q === '"' ? '"(?:[^"\\\\\\n]|\\\\.)*"' : '`(?:[^`\\\\]|\\\\.)*`'})`;
 
+// What the engine can draw right now: styles from cast.js, casts from engine/runtime/casts/*.js. Read fresh each time.
+function options() {
+  const cast = fs.readFileSync(path.join(ROOT, 'engine/runtime/cast.js'), 'utf8'), m = /const STYLES=\[([^\]]*)\]/.exec(cast);
+  const styles = m ? [...m[1].matchAll(/'([a-z-]+)'/g)].map(x => x[1]) : ['paper'];
+  const cdir = path.join(ROOT, 'engine/runtime/casts');
+  const casts = ['paper', ...(fs.existsSync(cdir) ? fs.readdirSync(cdir).filter(f => f.endsWith('.js')).map(f => f.slice(0, -3)).sort() : [])];
+  return { styles, casts, forms: pb.FORMS };
+}
+
 function books() {
   return fs.readdirSync(BOOKS).filter(d => okName(d) && fs.existsSync(path.join(BOOKS, d, 'book.config.js'))).map(slug => {
     const b = pb.loadBook(slug);
@@ -132,6 +141,7 @@ function handler(port) {
         res.writeHead(200, { 'content-type': 'image/png', 'cache-control': 'no-store' });
         return res.end(fs.readFileSync(file));
       }
+      if (req.method === 'GET' && u.pathname === '/api/options') return json(res, 200, options());
       if (req.method === 'GET' && u.pathname === '/api/books') return json(res, 200, books());
       if (req.method === 'GET' && u.pathname === '/api/check') { if (!okName(q.book)) return json(res, 400, { error: 'bad book' }); return json(res, 200, check(q.book)); }
       if (req.method === 'GET' && u.pathname === '/api/page') {
@@ -188,7 +198,12 @@ function handler(port) {
         pb.init([B, body.title.trim()]);
         const cfg = path.join(BOOKS, B, 'book.config.js');
         if (pb.FORMS.includes(body.form)) setField(cfg, 'form', body.form);
-        if (['paper', 'ink', 'felt', 'embroidery'].includes(body.style)) setField(cfg, 'style', body.style);
+        const opts = options();
+        if (opts.styles.includes(body.style)) setField(cfg, 'style', body.style);
+        if (opts.casts.includes(body.cast) && body.cast !== 'paper') {      // the template has no cast line: add one
+          const src = fs.readFileSync(cfg, 'utf8');
+          fs.writeFileSync(cfg, /\bcast\s*:/.test(src) ? src.replace(/(\bcast\s*:\s*)(['"])[^'"]*\2/, `$1'${body.cast}'`) : src.replace(/\}\)\s*$/, `  cast: '${body.cast}',      // who plays the roles; ?cast= overrides it\n})\n`));
+        }
         if (typeof body.series === 'string') setField(cfg, 'series', body.series.slice(0, 60));
         return json(res, 200, check(B));
       }

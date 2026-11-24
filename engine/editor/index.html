@@ -84,7 +84,7 @@ dialog p{margin:0;color:var(--ink-dim);font-size:.92rem}
 dialog label{display:flex;flex-direction:column;gap:4px;font:600 .85rem var(--display)}
 dialog input,dialog textarea,dialog select{border:0;background:#fff;padding:8px 10px;font:1rem var(--body);clip-path:none}
 dialog textarea{min-height:180px;resize:vertical;line-height:1.45}
-dialog .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+dialog .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 dialog .row2{display:grid;grid-template-columns:2fr 1fr;gap:10px}
 dialog .actions{display:flex;gap:8px;justify-content:flex-end}
 @media (max-width:560px){dialog .grid,dialog .row2{grid-template-columns:1fr}}
@@ -95,7 +95,8 @@ dialog .actions{display:flex;gap:8px;justify-content:flex-end}
 <header>
   <h1>Picture Book Editor</h1>
   <label class="sel">Book <select id="book"></select></label>
-  <label class="sel">Style <select id="style"><option value="">book’s own</option><option>paper</option><option>ink</option><option>felt</option><option>embroidery</option></select></label>
+  <label class="sel">Style <select id="style"><option value="">book’s own</option></select></label>
+  <label class="sel">Cast <select id="cast"><option value="">book’s own</option></select></label>
   <button class="btn quiet" id="contact" type="button">All pages</button>
   <button class="btn quiet" id="newbook" type="button">New book</button>
   <div id="status" role="status">Loading…</div>
@@ -144,7 +145,8 @@ dialog .actions{display:flex;gap:8px;justify-content:flex-end}
     <label>The idea <textarea id="nb-idea" required placeholder="A cat sits on a keyboard and accidentally commits to main. Teach what a branch is and why pull requests exist. Funny, a little chaotic, and it should end with the cat on the keyboard again."></textarea></label>
     <div class="grid">
       <label>Form <select id="nb-form"><option value="">Claude picks</option><option>chain</option><option>recipe</option><option>journey</option><option>cumulative</option><option>call-response</option><option>fortunately</option><option>countdown</option></select></label>
-      <label>Style <select id="nb-style"><option>paper</option><option>ink</option><option>felt</option><option>embroidery</option></select></label>
+      <label>Style <select id="nb-style"></select></label>
+      <label>Cast <select id="nb-cast"></select></label>
     </div>
     <label>Series (optional) <input id="nb-series" placeholder="Getting Started"></label>
     <div class="actions"><button class="btn quiet" value="cancel" formnovalidate type="submit">Cancel</button><button class="btn" value="go" type="submit" id="nb-go">Create and write it</button></div>
@@ -200,7 +202,7 @@ $('addpage').addEventListener('submit',async e=>{e.preventDefault();const name=$
   try{showReport(await api('/api/new-page',{book:st.book,name,at:st.page+1}));$('pname').value='';await loadBooks(true);await select(st.page+1)}catch(err){status(err.message,'bad')}});
 
 /* ---------- preview + code ---------- */
-function preview(){const q=new URLSearchParams({page:st.page,t:Date.now()});if($('style').value)q.set('style',$('style').value);
+function preview(){const q=new URLSearchParams({page:st.page,t:Date.now()});if($('style').value)q.set('style',$('style').value);if($('cast').value)q.set('cast',$('cast').value);
   $('frame').src=`/preview/${st.book}/?${q}`}
 async function select(i,keepFocus){st.page=i;document.querySelectorAll('.row').forEach(r=>r.classList.toggle('on',+r.dataset.i===i));
   $('pagename').textContent=pageName();preview();await loadFiles()}
@@ -216,15 +218,15 @@ async function save(){try{const r=await api('/api/page',{book:st.book,page:pageN
 $('save').addEventListener('click',save);$('revert').addEventListener('click',showTab);
 document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key==='s'){e.preventDefault();save()}});
 $('book').addEventListener('change',async()=>{st.book=$('book').value;localSet('book',st.book);st.page=0;st.session=null;drawScript();await select(0);showReport(await api('/api/check?book='+st.book))});
-$('style').addEventListener('change',preview);
-$('contact').addEventListener('click',()=>{const q=new URLSearchParams();if($('style').value)q.set('style',$('style').value);
+$('style').addEventListener('change',preview);$('cast').addEventListener('change',preview);
+$('contact').addEventListener('click',()=>{const q=new URLSearchParams();if($('style').value)q.set('style',$('style').value);if($('cast').value)q.set('cast',$('cast').value);
   window.open(`/contact/${st.book}/?${q}`,'_blank')});
 $('newbook').addEventListener('click',()=>{if(st.busy)return status('Claude is still working.','warn');$('nb').showModal();$('nb-title').focus()});
 let slugTouched=false;
 $('nb-slug').addEventListener('input',()=>slugTouched=true);
 $('nb-title').addEventListener('input',()=>{if(!slugTouched)$('nb-slug').value=$('nb-title').value.toLowerCase().replace(/^if you give an? /,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40)});
 $('nbform').addEventListener('submit',async e=>{if(e.submitter?.value!=='go')return;e.preventDefault();
-  const b={book:$('nb-slug').value.trim(),title:$('nb-title').value.trim(),idea:$('nb-idea').value.trim(),form:$('nb-form').value,style:$('nb-style').value,series:$('nb-series').value.trim()};
+  const b={book:$('nb-slug').value.trim(),title:$('nb-title').value.trim(),idea:$('nb-idea').value.trim(),form:$('nb-form').value,style:$('nb-style').value,cast:$('nb-cast').value,series:$('nb-series').value.trim()};
   if(!b.book||!b.title||!b.idea)return;
   try{await api('/api/new-book',b)}catch(err){return alert(err.message)}
   $('nb').close();slugTouched=false;['nb-title','nb-slug','nb-idea','nb-series'].forEach(id=>$(id).value='');
@@ -255,7 +257,12 @@ $('dir').addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key==='Ente
 $('stop').addEventListener('click',()=>api('/api/claude/stop',{}).catch(()=>{}));
 $('fresh').addEventListener('click',()=>{st.session=null;$('log').innerHTML='<p class="empty">New conversation. Claude won’t remember the earlier one.</p>'});
 
-(async()=>{try{await loadBooks();await select(0);showReport(await api('/api/check?book='+st.book))}catch(e){status(e.message,'bad')}})();
+/* the styles, casts and forms the engine offers, read from the server so new ones show up without editing this page */
+async function loadOptions(){const o=await api('/api/options'),opt=v=>`<option>${esc(v)}</option>`;
+  $('style').innerHTML='<option value="">book’s own</option>'+o.styles.map(opt).join('');$('cast').innerHTML='<option value="">book’s own</option>'+o.casts.map(opt).join('');
+  $('nb-style').innerHTML=o.styles.map(opt).join('');$('nb-cast').innerHTML=o.casts.map(opt).join('');
+  $('nb-form').innerHTML='<option value="">Claude picks</option>'+o.forms.map(opt).join('')}
+(async()=>{try{await loadOptions();await loadBooks();await select(0);showReport(await api('/api/check?book='+st.book))}catch(e){status(e.message,'bad')}})();
 </script>
 </body>
 </html>
