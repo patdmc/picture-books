@@ -21,7 +21,9 @@ a:focus-visible{outline:3px solid var(--on-mat);outline-offset:4px}
 .swatch{height:120px;display:grid;place-items:center;font-family:'Fredoka',sans-serif;font-weight:700;font-size:1.5rem;color:#d5433c;text-align:center;padding:0 10px}
 h2{font-family:'Fredoka','Trebuchet MS',sans-serif;font-weight:700;font-size:1.25rem;line-height:1.25;margin:14px 0 6px}
 a p{margin:0;line-height:1.45}
-@media (prefers-reduced-motion:no-preference){a{transition:transform .15s ease-out}}
+p.about{margin:40px 0 0}
+p.about a{display:inline;height:auto;background:none;box-shadow:none;padding:0;color:var(--on-mat);text-decoration:underline;text-underline-offset:3px;transform:none}
+@media (prefers-reduced-motion:no-preference){li a{transition:transform .15s ease-out}}
 </style>
 </head>
 <body>
@@ -31,6 +33,7 @@ a p{margin:0;line-height:1.45}
   <ul>
 {{CARDS}}
   </ul>
+  <p class="about"><a href="https://github.com/patdmc/picture-books">How these books are made</a></p>
 </main>
 </body>
 </html>

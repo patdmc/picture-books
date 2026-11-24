@@ -32,7 +32,7 @@ Needs Node 18 or later. No dependencies.
 node engine/cli/picture-book.js init my-book "If You Give a Dev a Thing"
 node engine/cli/picture-book.js new my-book thresholds    # then add 'thresholds' to books/my-book/cut.js
 node engine/cli/picture-book.js check --all               # draws every page at several tap counts
-node engine/cli/picture-book.js build --all               # writes site/
+node engine/cli/picture-book.js build --all               # writes site/ for a local look
 open site/index.html
 ```
 
@@ -40,7 +40,13 @@ open site/index.html
 
 ## Deploying
 
-A push to `main` runs `check` and `build`, then publishes `site/` to GitHub Pages. `site/` and `out/` are never committed.
+The built pages are committed at the repo root (`index.html` and one folder per book), so GitHub Pages serves them straight from `main`. After changing a book or the engine:
+
+```sh
+node engine/cli/picture-book.js build --all --root
+```
+
+Commit the result with the change. The workflow fails a push whose committed pages are stale.
 
 ## Using the skills
 

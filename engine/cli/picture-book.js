@@ -70,20 +70,22 @@ __out.push('ok: '+SC.length+' spreads (cover + '+(SC.length-1)+' pages)');`, ctx
 }
 
 function build(args) {
-  const artifact = args.includes('--artifact'), list = slugs(args.filter(a => a !== '--artifact'));
+  const artifact = args.includes('--artifact'), root = args.includes('--root'), dest = root ? ROOT : SITE, label = root ? '' : 'site/';
+  const list = slugs(args.filter(a => !a.startsWith('--') || a === '--all'));
   for (const slug of list) {
     const b = loadBook(slug), body = bookBody(b);
     if (artifact) { write(path.join(OUT, slug + '.html'), body); console.log(`out/${slug}.html (page body, for publishing as an Artifact)`); continue; }
-    write(path.join(SITE, slug, 'index.html'), fill(SKELETON, { BODY: body }));
+    write(path.join(dest, slug, 'index.html'), fill(SKELETON, { BODY: body }));
     for (const a of b.config.aliases || [])
-      write(path.join(SITE, a), `<!doctype html><meta charset="utf-8"><title>${esc(b.config.title)}</title><meta http-equiv="refresh" content="0; url=${slug}/"><p><a href="${slug}/">${esc(b.config.title)}</a></p>\n`);
-    console.log(`site/${slug}/index.html`);
+      write(path.join(dest, a), `<!doctype html><meta charset="utf-8"><title>${esc(b.config.title)}</title><meta http-equiv="refresh" content="0; url=${slug}/"><p><a href="${slug}/">${esc(b.config.title)}</a></p>\n`);
+    console.log(`${label}${slug}/index.html`);
   }
   if (artifact) return;
   const cards = shelf().map(s => { const c = evalFile(path.join(BOOKS, s, 'book.config.js'));
     return `    <li><a href="${s}/">\n      <div class="swatch" style="background:${esc(c.swatch || '#a9d5e8')}">${esc(c.tag || '')}</div>\n      <h2>${esc(c.title)}</h2>\n      <p>${esc(c.blurb || '')}</p></a></li>`; }).join('\n');
-  write(path.join(SITE, 'index.html'), fill(read(path.join(ENG, 'site/index.html')), { CARDS: cards }));
-  console.log('site/index.html');
+  write(path.join(dest, 'index.html'), fill(read(path.join(ENG, 'site/index.html')), { CARDS: cards }));
+  if (root) write(path.join(dest, '.nojekyll'), '');
+  console.log(label + 'index.html');
 }
 
 function copyDir(from, to, map) {
@@ -115,4 +117,4 @@ if (cmd === 'build') build(args);
 else if (cmd === 'check') slugs(args).forEach(check);
 else if (cmd === 'init') init(args);
 else if (cmd === 'new') newPage(args);
-else { console.log('usage: picture-book <init <slug> "<Title>" | new <slug> <page> | build [slug...|--all] [--artifact] | check [slug...|--all]>'); process.exit(cmd ? 1 : 0); }
+else { console.log('usage: picture-book <init <slug> "<Title>" | new <slug> <page> | build [slug...|--all] [--artifact|--root] | check [slug...|--all]>'); process.exit(cmd ? 1 : 0); }

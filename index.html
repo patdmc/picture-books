@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Picture Books</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Fredoka:wght@500;700&display=swap">
+<style>
+:root{--mat:#2f7566;--line:rgba(255,255,255,.16);--on-mat:#f3f0e4;--paper:#f8f4ea;--ink:#2b2a28;--shadow:rgba(0,0,0,.32)}
+@media (prefers-color-scheme:dark){:root{--mat:#16332d;--line:rgba(255,255,255,.08);--paper:#ece6d6;--shadow:rgba(0,0,0,.55)}}
+html,body{min-height:100%}
+body{margin:0;background:var(--mat);background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:32px 32px;color:var(--on-mat);font-family:'Andika','Trebuchet MS',Verdana,sans-serif}
+main{max-width:920px;margin:0 auto;padding-block:40px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1{font-family:'Fredoka','Trebuchet MS',sans-serif;font-weight:700;font-size:clamp(2rem,6vw,3.2rem);margin:0 0 6px}
+p.lede{margin:0 0 32px;max-width:46ch;font-size:1.1rem;line-height:1.5}
+ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:28px}
+a{display:block;height:100%;box-sizing:border-box;background:var(--paper);color:var(--ink);text-decoration:none;padding:14px 14px 18px;box-shadow:0 10px 24px var(--shadow)}
+li:nth-child(1) a{transform:rotate(-1.2deg)} li:nth-child(2) a{transform:rotate(.8deg)} li:nth-child(3) a{transform:rotate(-.5deg)}
+a:hover,a:focus-visible{transform:rotate(0) translateY(-4px)}
+a:focus-visible{outline:3px solid var(--on-mat);outline-offset:4px}
+.swatch{height:120px;display:grid;place-items:center;font-family:'Fredoka',sans-serif;font-weight:700;font-size:1.5rem;color:#d5433c;text-align:center;padding:0 10px}
+h2{font-family:'Fredoka','Trebuchet MS',sans-serif;font-weight:700;font-size:1.25rem;line-height:1.25;margin:14px 0 6px}
+a p{margin:0;line-height:1.45}
+p.about{margin:40px 0 0}
+p.about a{display:inline;height:auto;background:none;box-shadow:none;padding:0;color:var(--on-mat);text-decoration:underline;text-underline-offset:3px;transform:none}
+@media (prefers-reduced-motion:no-preference){li a{transition:transform .15s ease-out}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Picture Books</h1>
+  <p class="lede">Three cut-paper stories about how software gets built. Tap things. Each one ends where it began.</p>
+  <ul>
+    <li><a href="dev-metric/">
+      <div class="swatch" style="background:#a9d5e8">a Metric…</div>
+      <h2>If You Give a Dev a Metric</h2>
+      <p>Graphs, thresholds, pagers, runbooks, and why you always need one more metric.</p></a></li>
+    <li><a href="dev-agent/">
+      <div class="swatch" style="background:#cdb8e3">an Agent…</div>
+      <h2>If You Give a Dev an Agent</h2>
+      <p>Validation, guardrails, and the line between platform and application.</p></a></li>
+    <li><a href="agent-request/">
+      <div class="swatch" style="background:#cde6c1">a Request…</div>
+      <h2>If You Give an Agent a Request</h2>
+      <p>How intent fades between request and report, and the harness that carries it.</p></a></li>
+  </ul>
+  <p class="about"><a href="https://github.com/patdmc/picture-books">How these books are made</a></p>
+</main>
+</body>
+</html>

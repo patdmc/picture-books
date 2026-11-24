@@ -22,7 +22,7 @@ Read before writing: `engine/docs/STORY.md`, `engine/docs/CAST.md`, `engine/docs
 6. **Check.** `node engine/cli/picture-book.js check <slug>` → must print `ok`. Fix errors; read every WARN.
 7. **Publish a draft.** `build <slug> --artifact` → publish `out/<slug>.html` with the `Artifact` tool. Private until the author shares it.
 8. **Report.** Link, what each page does, every word in the art that is not in the story, and that the render is unverified unless someone looked.
-9. **Shelve.** Author happy → add the slug to `books/shelf.js`, fill `tag`, `swatch`, `blurb` in `book.config.js`, commit. Ask before pushing; a push to `main` deploys the public site.
+9. **Shelve.** Author happy → add the slug to `books/shelf.js`, fill `tag`, `swatch`, `blurb` in `book.config.js`, run `build --all --root`, commit sources and built pages together. Ask before pushing; a push to `main` deploys the public site.
 
 ## Out of scope
 

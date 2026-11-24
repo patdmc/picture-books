@@ -36,6 +36,8 @@ jobs:
           node-version: 20
       - name: Check every book
         run: node engine/cli/picture-book.js check --all
+      - name: The committed pages match the sources
+        run: node engine/cli/picture-book.js build --all --root && git diff --exit-code
       - name: Build the site
         run: node engine/cli/picture-book.js build --all
       - name: Setup Pages
