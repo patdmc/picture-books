@@ -6,7 +6,7 @@ let Q;try{Q=new URLSearchParams(location.search)}catch(_){Q=new URLSearchParams(
 function dress(sc){const st=Q.get('style')||sc.style||BOOK.style;STYLE=STYLES.includes(st)?st:'paper';useCast(Q.get('cast')||sc.cast||BOOK.cast);
   try{document.documentElement.dataset.style=STYLE;document.documentElement.dataset.cast=CAST}catch(_){}}
 function render(enter,focusKey){const sc=SC[idx];dress(sc);
-  art.innerHTML=`<rect width="800" height="500" fill="${sc.bg}"/>`+sc.draw(S);
+  art.innerHTML=`<rect width="800" height="500" fill="${sc.bg}"/>`+(STYLE==='embroidery'?'<rect width="800" height="500" fill="url(#linen)"/>':'')+sc.draw(S);
   if(enter){$('cap').textContent=sc.cap;$('hint').textContent=sc.hint;
     $('count').textContent=idx?`page ${idx} of ${SC.length-1}`:'cover';$('prev').disabled=!idx;
     $('next').setAttribute('aria-label',idx===SC.length-1?'Start the story again':'Next page');snips(sc.commands);

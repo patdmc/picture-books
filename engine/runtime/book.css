@@ -97,7 +97,10 @@ nav button:not(:disabled):active{transform:translateY(2px)}
 .pc.st-felt{filter:none; stroke:rgba(255,255,255,.55); stroke-width:3.2; stroke-dasharray:.5 6; stroke-linecap:round; vector-effect:non-scaling-stroke}
 /* macrame: knotted cord; shapes.js adds the knot layer and the fringe */
 .pc.st-macrame{stroke:rgba(0,0,0,.2); stroke-width:1.6; stroke-linejoin:round; vector-effect:non-scaling-stroke}
-.t.st-felt,.t.st-macrame{stroke:none}
+.t.st-felt,.t.st-macrame,.t.st-embroidery{stroke:none}
+/* embroidery: satin-stitch fills (shapes.js), a backstitched outline, a little puff off the linen */
+.pc.st-embroidery{filter:drop-shadow(0 1px .6px rgba(0,0,0,.35)); stroke:rgba(0,0,0,.42); stroke-width:1.5; stroke-dasharray:5 2.4; stroke-linecap:round; vector-effect:non-scaling-stroke}
+.t.st-embroidery{font-family:'Fredoka',sans-serif; font-weight:600; paint-order:stroke; stroke:rgba(0,0,0,.25); stroke-width:.6px; stroke-dasharray:3 1.5}
 
 /* cheat sheet: real commands, click to copy */
 #snips{list-style:none; margin:10px auto 6px; padding:0; max-width:640px; display:grid; gap:10px}

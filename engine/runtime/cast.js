@@ -103,7 +103,7 @@ function cloud(x,y,cls=''){return `<g class="${cls}"><g class="solid${stc()}">`+
    engine/runtime/casts/ and register themselves in CASTS. Styles (paper, ink, felt) are CSS only. */
 const ROLES={dev,face,agent,metric,repo,cloud,photo,rocket,book};
 const CASTS={paper:{}};
-const STYLES=['paper','ink','felt','macrame'];
+const STYLES=['paper','ink','felt','macrame','embroidery'];
 let CAST='paper',STYLE='paper';
 /* Draw part of a scene in another style and cast: as('ink','toys',()=>dev(...)). */
 function as(style,cast,fn){const s0=STYLE,c0=CAST;STYLE=STYLES.includes(style)?style:s0;useCast(cast||c0);let out;
