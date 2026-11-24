@@ -1,4 +1,4 @@
-site/
-out/
+/site/
+/out/
 node_modules/
 .DS_Store
