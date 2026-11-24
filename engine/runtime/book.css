@@ -70,7 +70,7 @@ nav button:not(:disabled):active{transform:translateY(2px)}
 @keyframes draw{from{clip-path:inset(-20px 100% -20px -20px)} to{clip-path:inset(-20px)}}
 @keyframes turnN{from{opacity:0; transform:translateX(46px) rotate(1.6deg)}}
 @keyframes turnP{from{opacity:0; transform:translateX(-46px) rotate(-2deg)}}
-.entering .pc{animation:lay .5s cubic-bezier(.2,.8,.3,1) both; animation-delay:calc(var(--i,0) * 12ms)}
+.entering .pc,.entering .knot{animation:lay .5s cubic-bezier(.2,.8,.3,1) both; animation-delay:calc(var(--i,0) * 12ms)}
 .pop{animation:pop .45s cubic-bezier(.2,.9,.3,1.2) both}
 .nudge{animation:nudge 1.5s ease-in-out infinite}
 .shake{transform-box:fill-box; transform-origin:50% 0; animation:shake .16s ease-in-out infinite alternate}
@@ -94,6 +94,12 @@ nav button:not(:disabled):active{transform:translateY(2px)}
 [data-style="felt"] .art{filter:url(#fiber)}
 [data-style="felt"] .pc{filter:none; stroke:rgba(255,255,255,.55); stroke-width:3.2; stroke-dasharray:.5 6; stroke-linecap:round; vector-effect:non-scaling-stroke}
 [data-style="felt"] .t{stroke:none}
+
+/* macrame: knotted cord; shapes.js adds the knot layer and the fringe */
+.knot{pointer-events:none}
+[data-style="macrame"] .pc{stroke:rgba(0,0,0,.2); stroke-width:1.6; stroke-linejoin:round; vector-effect:non-scaling-stroke}
+[data-style="macrame"] .art{filter:url(#wobble)}
+[data-style="macrame"] .t{stroke:none}
 
 /* cheat sheet: real commands, click to copy */
 #snips{list-style:none; margin:10px auto 6px; padding:0; max-width:640px; display:grid; gap:10px}

@@ -103,7 +103,7 @@ function cloud(x,y,cls=''){return `<g class="${cls}"><g class="solid">`+circ(x-4
    engine/runtime/casts/ and register themselves in CASTS. Styles (paper, ink, felt) are CSS only. */
 const ROLES={dev,face,agent,metric,repo,cloud,photo,rocket,book};
 const CASTS={paper:{}};
-const STYLES=['paper','ink','felt'];
+const STYLES=['paper','ink','felt','macrame'];
 let CAST='paper',STYLE='paper';
 function useCast(name){CAST=CASTS[name]?name:'paper';const k={...ROLES,...CASTS[CAST]};
   dev=k.dev;face=k.face;agent=k.agent;metric=k.metric;repo=k.repo;cloud=k.cloud;photo=k.photo;rocket=k.rocket;book=k.book}

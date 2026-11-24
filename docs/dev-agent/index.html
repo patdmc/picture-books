@@ -75,7 +75,7 @@ nav button:not(:disabled):active{transform:translateY(2px)}
 @keyframes draw{from{clip-path:inset(-20px 100% -20px -20px)} to{clip-path:inset(-20px)}}
 @keyframes turnN{from{opacity:0; transform:translateX(46px) rotate(1.6deg)}}
 @keyframes turnP{from{opacity:0; transform:translateX(-46px) rotate(-2deg)}}
-.entering .pc{animation:lay .5s cubic-bezier(.2,.8,.3,1) both; animation-delay:calc(var(--i,0) * 12ms)}
+.entering .pc,.entering .knot{animation:lay .5s cubic-bezier(.2,.8,.3,1) both; animation-delay:calc(var(--i,0) * 12ms)}
 .pop{animation:pop .45s cubic-bezier(.2,.9,.3,1.2) both}
 .nudge{animation:nudge 1.5s ease-in-out infinite}
 .shake{transform-box:fill-box; transform-origin:50% 0; animation:shake .16s ease-in-out infinite alternate}
@@ -99,6 +99,12 @@ nav button:not(:disabled):active{transform:translateY(2px)}
 [data-style="felt"] .art{filter:url(#fiber)}
 [data-style="felt"] .pc{filter:none; stroke:rgba(255,255,255,.55); stroke-width:3.2; stroke-dasharray:.5 6; stroke-linecap:round; vector-effect:non-scaling-stroke}
 [data-style="felt"] .t{stroke:none}
+
+/* macrame: knotted cord; shapes.js adds the knot layer and the fringe */
+.knot{pointer-events:none}
+[data-style="macrame"] .pc{stroke:rgba(0,0,0,.2); stroke-width:1.6; stroke-linejoin:round; vector-effect:non-scaling-stroke}
+[data-style="macrame"] .art{filter:url(#wobble)}
+[data-style="macrame"] .t{stroke:none}
 
 /* cheat sheet: real commands, click to copy */
 #snips{list-style:none; margin:10px auto 6px; padding:0; max-width:640px; display:grid; gap:10px}
@@ -143,6 +149,12 @@ nav button:not(:disabled):active{transform:translateY(2px)}
             <feComposite in2="d" operator="in" result="o"/>
             <feMerge><feMergeNode in="o"/><feMergeNode in="SourceGraphic"/></feMerge>
           </filter>
+          <!-- macrame: rows of half-hitch knots, drawn in shade and highlight so they tint any colour beneath -->
+          <pattern id="knots" width="18" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(-8)">
+            <path d="M-1,8 q5,-9 10,0 q5,9 10,0" fill="none" stroke="rgba(0,0,0,.42)" stroke-width="3.4" stroke-linecap="round"/>
+            <path d="M-1,6.4 q5,-9 10,0 q5,9 10,0" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="1.6" stroke-linecap="round"/>
+            <circle cx="9" cy="8" r="3" fill="rgba(0,0,0,.34)"/><circle cx="8.2" cy="7" r="1.3" fill="rgba(255,255,255,.55)"/>
+          </pattern>
           <!-- felt: fuzzy edges and vertical fibres through every piece -->
           <filter id="fiber" x="-3%" y="-3%" width="106%" height="106%">
             <feTurbulence type="fractalNoise" baseFrequency=".05" numOctaves="2" seed="5" result="w"/>
@@ -179,9 +191,17 @@ const DEVS=[[C.orange,C.blue],[C.teal,C.navy],[C.purple,C.pink],[C.blue,C.orange
 const h=(a,b,c)=>{const t=Math.sin(a*12.9898+b*78.233+c*37.719)*43758.5453;return (t-Math.floor(t))*2-1};
 const f=n=>(+n).toFixed(1);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-const poly=(pts,fill,cls='',extra='')=>`<polygon class="pc ${cls}" points="${pts.map(p=>f(p[0])+','+f(p[1])).join(' ')}" fill="${fill}" ${extra}/>`;
-function box(x,y,w,hh,fill,cls='',extra=''){const J=Math.min(2.4,Math.min(w,hh)*.12);
+/* macrame: every piece also gets a layer of knotted cord over its own colour (see #knots in shell.html) */
+const knotted=cls=>typeof STYLE!=='undefined'&&STYLE==='macrame'&&!/gloss|shadow/.test(cls);
+const span=pts=>{const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);return Math.max(Math.max(...xs)-Math.min(...xs),Math.max(...ys)-Math.min(...ys))};
+const poly=(pts,fill,cls='',extra='')=>{const P=pts.map(p=>f(p[0])+','+f(p[1])).join(' ');
+  return `<polygon class="pc ${cls}" points="${P}" fill="${fill}" ${extra}/>`+(knotted(cls)&&span(pts)>=20?`<polygon class="knot ${cls}" points="${P}" fill="url(#knots)"/>`:'')};
+function box0(x,y,w,hh,fill,cls='',extra=''){const J=Math.min(2.4,Math.min(w,hh)*.12);
   return poly([[x,y],[x+w,y],[x+w,y+hh],[x,y+hh]].map((p,i)=>[p[0]+h(x,y,i)*J,p[1]+h(y,w,i+4)*J]),fill,cls,extra)}
+/* macrame: a big piece hangs a fringe of loose cords from its bottom edge */
+function box(x,y,w,hh,fill,cls='',extra=''){let s=box0(x,y,w,hh,fill,cls,extra);
+  if(knotted(cls)&&w>=80&&hh>=36&&fill!==C.ink)for(let fx=x+6;fx<x+w-4;fx+=10)s+=strip(fx,y+hh-2,fx+h(fx,y,9)*3,y+hh+12+Math.abs(h(fx,w,3))*6,3.6,fill,cls);
+  return s}
 function circ(cx,cy,r,fill,ry=r,cls='',extra=''){const n=clamp(Math.round(r/3)+8,9,20),p=[];
   for(let i=0;i<n;i++){const a=i/n*6.2832+h(cx,cy,i)*.1,k=1+h(cy,r,i)*.05;p.push([cx+Math.cos(a)*r*k,cy+Math.sin(a)*ry*k])}
   return poly(p,fill,cls,extra)}
@@ -301,7 +321,7 @@ function cloud(x,y,cls=''){return `<g class="${cls}"><g class="solid">`+circ(x-4
    engine/runtime/casts/ and register themselves in CASTS. Styles (paper, ink, felt) are CSS only. */
 const ROLES={dev,face,agent,metric,repo,cloud,photo,rocket,book};
 const CASTS={paper:{}};
-const STYLES=['paper','ink','felt'];
+const STYLES=['paper','ink','felt','macrame'];
 let CAST='paper',STYLE='paper';
 function useCast(name){CAST=CASTS[name]?name:'paper';const k={...ROLES,...CASTS[CAST]};
   dev=k.dev;face=k.face;agent=k.agent;metric=k.metric;repo=k.repo;cloud=k.cloud;photo=k.photo;rocket=k.rocket;book=k.book}
@@ -615,7 +635,7 @@ function render(enter,focusKey){const sc=SC[idx];
   if(enter){$('cap').textContent=sc.cap;$('hint').textContent=sc.hint;
     $('count').textContent=idx?`page ${idx} of ${SC.length-1}`:'cover';$('prev').disabled=!idx;
     $('next').setAttribute('aria-label',idx===SC.length-1?'Start the story again':'Next page');snips(sc.commands);
-    art.querySelectorAll('.pc').forEach((e,i)=>e.style.setProperty('--i',i));
+    art.querySelectorAll('.pc,.knot').forEach((e,i)=>e.style.setProperty('--i',i));
     stage.classList.add('entering');clearTimeout(enterT);enterT=setTimeout(()=>stage.classList.remove('entering'),1600)}
   else stage.classList.remove('entering');
   if(focusKey){const e=art.querySelector(`[data-tap="${focusKey}"]`);if(e)e.focus()}}

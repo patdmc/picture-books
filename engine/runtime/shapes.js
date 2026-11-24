@@ -8,9 +8,17 @@ const DEVS=[[C.orange,C.blue],[C.teal,C.navy],[C.purple,C.pink],[C.blue,C.orange
 const h=(a,b,c)=>{const t=Math.sin(a*12.9898+b*78.233+c*37.719)*43758.5453;return (t-Math.floor(t))*2-1};
 const f=n=>(+n).toFixed(1);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-const poly=(pts,fill,cls='',extra='')=>`<polygon class="pc ${cls}" points="${pts.map(p=>f(p[0])+','+f(p[1])).join(' ')}" fill="${fill}" ${extra}/>`;
-function box(x,y,w,hh,fill,cls='',extra=''){const J=Math.min(2.4,Math.min(w,hh)*.12);
+/* macrame: every piece also gets a layer of knotted cord over its own colour (see #knots in shell.html) */
+const knotted=cls=>typeof STYLE!=='undefined'&&STYLE==='macrame'&&!/gloss|shadow/.test(cls);
+const span=pts=>{const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);return Math.max(Math.max(...xs)-Math.min(...xs),Math.max(...ys)-Math.min(...ys))};
+const poly=(pts,fill,cls='',extra='')=>{const P=pts.map(p=>f(p[0])+','+f(p[1])).join(' ');
+  return `<polygon class="pc ${cls}" points="${P}" fill="${fill}" ${extra}/>`+(knotted(cls)&&span(pts)>=20?`<polygon class="knot ${cls}" points="${P}" fill="url(#knots)"/>`:'')};
+function box0(x,y,w,hh,fill,cls='',extra=''){const J=Math.min(2.4,Math.min(w,hh)*.12);
   return poly([[x,y],[x+w,y],[x+w,y+hh],[x,y+hh]].map((p,i)=>[p[0]+h(x,y,i)*J,p[1]+h(y,w,i+4)*J]),fill,cls,extra)}
+/* macrame: a big piece hangs a fringe of loose cords from its bottom edge */
+function box(x,y,w,hh,fill,cls='',extra=''){let s=box0(x,y,w,hh,fill,cls,extra);
+  if(knotted(cls)&&w>=80&&hh>=36&&fill!==C.ink)for(let fx=x+6;fx<x+w-4;fx+=10)s+=strip(fx,y+hh-2,fx+h(fx,y,9)*3,y+hh+12+Math.abs(h(fx,w,3))*6,3.6,fill,cls);
+  return s}
 function circ(cx,cy,r,fill,ry=r,cls='',extra=''){const n=clamp(Math.round(r/3)+8,9,20),p=[];
   for(let i=0;i<n;i++){const a=i/n*6.2832+h(cx,cy,i)*.1,k=1+h(cy,r,i)*.05;p.push([cx+Math.cos(a)*r*k,cy+Math.sin(a)*ry*k])}
   return poly(p,fill,cls,extra)}

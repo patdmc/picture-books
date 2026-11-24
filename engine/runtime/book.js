@@ -6,7 +6,7 @@ function render(enter,focusKey){const sc=SC[idx];
   if(enter){$('cap').textContent=sc.cap;$('hint').textContent=sc.hint;
     $('count').textContent=idx?`page ${idx} of ${SC.length-1}`:'cover';$('prev').disabled=!idx;
     $('next').setAttribute('aria-label',idx===SC.length-1?'Start the story again':'Next page');snips(sc.commands);
-    art.querySelectorAll('.pc').forEach((e,i)=>e.style.setProperty('--i',i));
+    art.querySelectorAll('.pc,.knot').forEach((e,i)=>e.style.setProperty('--i',i));
     stage.classList.add('entering');clearTimeout(enterT);enterT=setTimeout(()=>stage.classList.remove('entering'),1600)}
   else stage.classList.remove('entering');
   if(focusKey){const e=art.querySelector(`[data-tap="${focusKey}"]`);if(e)e.focus()}}
