@@ -26,7 +26,7 @@ function dragon(x,y,fire){let g=poly([[30,-10],[78,-34],[42,-30]],C.green)+box(-
   +circ(-28,-54,17,C.green)+box(-54,-58,24,14,C.green)+circ(-30,-60,5.5,C.white)+circ(-31.5,-60,2.4,C.ink)+poly([[-34,-70],[-28,-84],[-22,-69]],C.lime);
   if(fire)g+=poly([[-56,-54],[-100,-66],[-84,-51],[-108,-40],[-56,-45]],C.orange,'pop')+poly([[-56,-52],[-82,-55],[-74,-49],[-56,-47]],C.yellow,'pop');
   return `<g transform="translate(${x},${y})">${g}</g>`}
-function bubble(cx,cy,rx,ry,tx,ty){return circ(cx,cy,rx,C.white,ry)+circ(cx+(tx-cx)*.72,cy+(ty-cy)*.72,15,C.white)+circ(cx+(tx-cx)*.9,cy+(ty-cy)*.9,8,C.white)}
+function bubble(cx,cy,rx,ry,tx,ty){return '<g class="solid">'+circ(cx,cy,rx,C.white,ry)+'</g>'+circ(cx+(tx-cx)*.72,cy+(ty-cy)*.72,15,C.white)+circ(cx+(tx-cx)*.9,cy+(ty-cy)*.9,8,C.white)}
 function heart(x,y,s,col,cls=''){const p=[];for(let i=0;i<26;i++){const t=i/26*6.2832;p.push([x+s*16*Math.sin(t)**3,y-s*(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t))])}return poly(p,col,cls)}
 function arm(y){return strip(830,y+12,585,y,36,C.purple)+circ(578,y,26,C.purple)}
 function rocket(x,y,cls=''){return `<g class="${cls}">`+poly([[x-12,y+4],[x,y+34],[x+12,y+4]],C.yellow)+poly([[x-13,y-18],[x-28,y+6],[x-13,y+2]],C.red)+poly([[x+13,y-18],[x+28,y+6],[x+13,y+2]],C.red)+box(x-13,y-50,26,54,C.white)+poly([[x-14,y-48],[x,y-78],[x+14,y-48]],C.red)+circ(x,y-28,6,C.blue)+'</g>'}
@@ -60,9 +60,10 @@ function say(x,y,text,o={}){const size=o.size||22,lh=size*1.18,L=wrapWords(text,
   if(L.length>3)pbWarn(`bubble wraps to ${L.length} lines (max 3): "${text}"`);
   const tw=Math.max(...L.map(l=>textW(l,size))),rx=tw/2/.82+18,ry=L.length*lh/2/.74+20;
   const tx=o.tx??x-rx*.4,ty=o.ty??y+ry+50,a=Math.atan2((ty-y)/ry,(tx-x)/rx);
-  let g=poly([[x+Math.cos(a-.28)*rx*.8,y+Math.sin(a-.28)*ry*.8],[tx,ty],[x+Math.cos(a+.28)*rx*.8,y+Math.sin(a+.28)*ry*.8]],o.col||C.white);
+  let g='<g class="solid">'+poly([[x+Math.cos(a-.28)*rx*.8,y+Math.sin(a-.28)*ry*.8],[tx,ty],[x+Math.cos(a+.28)*rx*.8,y+Math.sin(a+.28)*ry*.8]],o.col||C.white);
   if(o.shout){const p=[],n=22;for(let i=0;i<n;i++){const t=i/n*6.2832,k=i%2?1.18:.96;p.push([x+Math.cos(t)*rx*k,y+Math.sin(t)*ry*k])}g+=poly(p,o.col||C.white)}
   else g+=circ(x,y,rx,o.col||C.white,ry);
+  g+='</g>';
   const y0=y-(L.length-1)*lh/2+size*.36;
   g+=`<text class="t" x="${f(x)}" y="${f(y0)}" font-size="${size}" fill="${C.ink}" text-anchor="middle">`+L.map((l,i)=>`<tspan x="${f(x)}" dy="${i?f(lh):0}">${xe(l)}</tspan>`).join('')+'</text>';
   return `<g class="${o.cls||''}">${g}</g>`}
@@ -93,4 +94,16 @@ function repo(x,y,s,o={}){let g=poly([[-50,-80],[-74,-104],[-24,-98],[0,-80]],C.
 /* A save (commit), drawn as an instant photo. */
 function photo(x,y,w,col=C.sky,cls='',label=''){return `<g class="${cls}">`+box(x,y,w,w*1.18,C.white)+box(x+w*.1,y+w*.1,w*.8,w*.72,col)+box(x+w*.36,y+w*.26,w*.28,w*.38,C.white)+(label?mk(x+w*.1,y+w*1.07,label,w*.13,-2):'')+'</g>'}
 /* The remote: a paper cloud labelled origin, centred on (x,y). */
-function cloud(x,y,cls=''){return `<g class="${cls}">`+circ(x-48,y+6,38,C.white)+circ(x,y-16,50,C.white)+circ(x+52,y+4,40,C.white)+box(x-80,y+4,164,40,C.white)+txt(x,y+30,'origin',24,C.ink)+'</g>'}
+function cloud(x,y,cls=''){return `<g class="${cls}"><g class="solid">`+circ(x-48,y+6,38,C.white)+circ(x,y-16,50,C.white)+circ(x+52,y+4,40,C.white)+box(x-80,y+4,164,40,C.white)+'</g>'+txt(x,y+30,'origin',24,C.ink)+'</g>'}
+
+
+/* ---------- casts: who plays each role ----------
+   A cast is a set of replacements for the role helpers below, with the same arguments, the same
+   feet point and about the same height, so every scene works with every cast. Cast files live in
+   engine/runtime/casts/ and register themselves in CASTS. Styles (paper, ink, felt) are CSS only. */
+const ROLES={dev,face,agent,metric,repo,cloud,photo,rocket,book};
+const CASTS={paper:{}};
+const STYLES=['paper','ink','felt'];
+let CAST='paper',STYLE='paper';
+function useCast(name){CAST=CASTS[name]?name:'paper';const k={...ROLES,...CASTS[CAST]};
+  dev=k.dev;face=k.face;agent=k.agent;metric=k.metric;repo=k.repo;cloud=k.cloud;photo=k.photo;rocket=k.rocket;book=k.book}

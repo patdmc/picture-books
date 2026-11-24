@@ -34,6 +34,7 @@ node engine/cli/picture-book.js init my-book "If You Give a Dev a Thing"
 node engine/cli/picture-book.js new my-book thresholds    # then add 'thresholds' to books/my-book/cut.js
 node engine/cli/picture-book.js check --all               # draws every page at several tap counts
 node engine/cli/picture-book.js build --all               # writes site/ for a local look
+node engine/cli/picture-book.js contact my-book           # every page on one sheet; add ?style=ink&cast=toys
 open site/index.html
 ```
 

@@ -1,6 +1,6 @@
 <title>{{TITLE}}</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Fredoka:wght@500;600;700&family=JetBrains+Mono:wght@500&family=Permanent+Marker&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Fredoka:wght@500;600;700&family=JetBrains+Mono:wght@500&family=Patrick+Hand&family=Permanent+Marker&display=swap">
 <style>
 {{CSS}}</style>
 
@@ -14,8 +14,29 @@
             <feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="3" seed="4"/>
             <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  .28 0 0 0 -.06"/>
           </filter>
+          <!-- ink: a hand-drawn wobble on every line -->
+          <filter id="wobble" x="-2%" y="-2%" width="104%" height="104%">
+            <feTurbulence type="fractalNoise" baseFrequency=".022" numOctaves="2" seed="11" result="n"/>
+            <feDisplacementMap in="SourceGraphic" in2="n" scale="3.2" xChannelSelector="R" yChannelSelector="G"/>
+          </filter>
+          <!-- ink: one outline round a group of pieces -->
+          <filter id="outline" x="-10%" y="-10%" width="120%" height="120%">
+            <feMorphology in="SourceAlpha" operator="dilate" radius="2.2" result="d"/>
+            <feFlood flood-color="#1d1b19"/>
+            <feComposite in2="d" operator="in" result="o"/>
+            <feMerge><feMergeNode in="o"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <!-- felt: fuzzy edges and vertical fibres through every piece -->
+          <filter id="fiber" x="-3%" y="-3%" width="106%" height="106%">
+            <feTurbulence type="fractalNoise" baseFrequency=".05" numOctaves="2" seed="5" result="w"/>
+            <feDisplacementMap in="SourceGraphic" in2="w" scale="5" xChannelSelector="R" yChannelSelector="G" result="d"/>
+            <feTurbulence type="fractalNoise" baseFrequency=".9 .035" numOctaves="2" seed="8" result="f"/>
+            <feColorMatrix in="f" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  -.9 0 0 0 .55" result="fl"/>
+            <feComposite in="fl" in2="d" operator="in" result="fm"/>
+            <feComposite in="d" in2="fm" operator="arithmetic" k1="0" k2="1" k3="-.35" k4="0"/>
+          </filter>
         </defs>
-        <g id="art"></g>
+        <g id="art" class="art"></g>
         <rect width="800" height="500" filter="url(#grain)" pointer-events="none"/>
       </svg>
       <p id="cap" aria-live="polite"></p>

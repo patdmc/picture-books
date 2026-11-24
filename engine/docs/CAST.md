@@ -97,3 +97,18 @@ Book-specific helpers (a request sheet, a row of stage cards) go in the book's `
 - Gates: two purple posts and a lintel with a label and a light; pieces pass underneath on an ink belt.
 - The line: `wavy()` with `mk('application')` above and `mk('platform')` below.
 - The offer: `arm(y)` plus the object, on the cover and the last page.
+
+## Styles and casts
+
+Two settings in `book.config.js`, both overridable on the URL for comparing (`?style=ink&cast=toys`):
+
+| setting | swaps | values |
+|---|---|---|
+| `style` | how every shape is drawn: outlines, texture, shadows, lettering. CSS and SVG filters in `book.css` and `shell.html`. | `paper` (cut paper), `ink` (coloured pen and ink with a wash), `felt` (fuzzy fibre, stitched edges) |
+| `cast` | who plays each role. A file in `engine/runtime/casts/` that registers replacements in `CASTS`. | `paper` (paper people), `toys` (peg dolls, a tin wind-up robot, a toy chest, a bouncy ball, a cotton-wool cloud) |
+
+- A cast replaces role helpers (`dev`, `face`, `agent`, `metric`, `repo`, `cloud`, `photo`, `rocket`, `book`) with the **same arguments, feet point and height**. Scenes never check which cast is playing.
+- A new role helper that a cast might replace → add it to `ROLES` and `useCast()` at the end of `cast.js`.
+- Pieces that should read as one shape in `ink` (a bubble and its tail, a cloud) go inside `<g class="solid">`, which gets one outline round the whole group.
+- `check` draws every page with every cast. `contact <slug>` writes `site/<slug>/contact-9.html`, every page in a grid; add `?style=` and `?cast=` to see the book another way.
+- Toys are generic toy types. Never a recognisable toy line or film character.

@@ -38,8 +38,9 @@ function loadBook(slug) {
 
 function bookJs(b) {
   const sc = b.pages.map(p => `/* ${p.name} */ Object.assign({name:${JSON.stringify(p.name)}},\n${p.lines},\n${p.scene})`).join(',\n\n');
-  return [read(path.join(ENG, 'runtime/shapes.js')), read(path.join(ENG, 'runtime/cast.js')), b.helpers,
-    `/* ---------- the pages, in cut order ---------- */\nconst SC=[\n${sc}\n];`, read(path.join(ENG, 'runtime/book.js'))].join('\n\n');
+  const casts = fs.readdirSync(path.join(ENG, 'runtime/casts')).filter(f => f.endsWith('.js')).sort().map(f => read(path.join(ENG, 'runtime/casts', f)));
+  return [read(path.join(ENG, 'runtime/shapes.js')), read(path.join(ENG, 'runtime/cast.js')), ...casts, b.helpers,
+    `const BOOK=${JSON.stringify({ style: b.config.style || 'paper', cast: b.config.cast || 'paper' })};\n/* ---------- the pages, in cut order ---------- */\nconst SC=[\n${sc}\n];`, read(path.join(ENG, 'runtime/book.js'))].join('\n\n');
 }
 
 const SKELETON = '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
@@ -55,10 +56,12 @@ function check(slug) {
   if (b.config.form && !FORMS.includes(b.config.form)) out.push(`WARN book.config.js: unknown form '${b.config.form}' (one of ${FORMS.join(', ')})`);
   let at = '';
   const shown = new Map();   // command typed in a term() -> first page that shows it
-  const ctx = { document: { getElementById: el, addEventListener() {}, createElement: el }, window: {}, setTimeout() {}, clearTimeout() {}, console, __out: out,
+  const ctx = { document: { getElementById: el, addEventListener() {}, createElement: el }, window: {}, URLSearchParams, setTimeout() {}, clearTimeout() {}, console, __out: out,
     __warn: m => out.push(`WARN ${at}: ${m}`), __cmd: c => { if (!shown.has(c)) shown.set(c, at); }, __setAt: a => { at = a; } };
   vm.createContext(ctx);
   vm.runInContext(bookJs(b) + `;
+if(BOOK.style&&!STYLES.includes(BOOK.style))__out.push('WARN book.config.js: unknown style '+BOOK.style+' (one of '+STYLES.join(', ')+')');
+if(BOOK.cast&&!CASTS[BOOK.cast])__out.push('WARN book.config.js: unknown cast '+BOOK.cast+' (one of '+Object.keys(CASTS).join(', ')+')');
 const __lum=c=>{const h=/^#([0-9a-f]{6})$/i.exec(c);if(!h)return 1;const n=parseInt(h[1],16);return(.299*(n>>16)+.587*((n>>8)&255)+.114*(n&255))/255};
 SC.forEach((sc,i)=>{const at='page '+i+' ('+sc.name+')';__setAt(at);
   if('commands' in sc){if(!Array.isArray(sc.commands)||!sc.commands.length)throw new Error(at+': a cheat sheet needs at least one entry in commands');
@@ -67,13 +70,15 @@ SC.forEach((sc,i)=>{const at='page '+i+' ('+sc.name+')';__setAt(at);
   if(__lum(sc.bg)<.7&&!sc.dark)__out.push('WARN '+at+': background '+sc.bg+' is dark; use a pale P.* colour or set dark:true');
   if(/\\u2014/.test(sc.cap||''))__out.push('WARN '+at+': em dash in the caption');
   let tappable=false;
-  for(const n of [0,1,2,3,4,5,7,9,12,30]){S={n};const s=sc.draw(S);
-    if(/NaN|undefined/.test(s))throw new Error(at+' at '+n+' taps: '+s.match(/.{0,60}(NaN|undefined).{0,20}/)[0]);
-    if(/data-tap/.test(s))tappable=true;}
+  for(const cast of Object.keys(CASTS)){useCast(cast);
+    for(const n of [0,1,2,3,4,5,7,9,12,30]){S={n};const s=sc.draw(S);
+      if(/NaN|undefined/.test(s))throw new Error(at+' with the '+cast+' cast at '+n+' taps: '+s.match(/.{0,60}(NaN|undefined).{0,20}/)[0]);
+      if(/data-tap/.test(s))tappable=true;}}
+  useCast('paper');
   if(!tappable)__out.push('WARN '+at+': nothing to tap');
 });
 __setAt('');globalThis.__sheet=SC.flatMap(sc=>(sc.commands||[]).map(c=>c.cmd.trim()));
-__out.push('ok: '+SC.length+' spreads (cover + '+(SC.length-1)+' pages)');`, ctx, { filename: `books/${slug}` });
+__out.push('ok: '+SC.length+' spreads (cover + '+(SC.length-1)+' pages), casts: '+Object.keys(CASTS).join(', '));`, ctx, { filename: `books/${slug}` });
   const sheet = ctx.__sheet;
   if (shown.size && !sheet.length) out.unshift(`WARN the art types ${shown.size} command(s) but the book has no cheat sheet (new ${slug} cheat-sheet --sheet)`);
   else for (const [c, where] of shown) if (!sheet.includes(c.trim())) out.unshift(`WARN ${where}: "${c}" is typed in the art but missing from the cheat sheet`);
@@ -105,6 +110,27 @@ function build(args) {
   console.log(label + 'index.html');
 }
 
+// A contact sheet: every page of a book drawn in a grid at one tap count, for looking at the whole book at once.
+// Open it with ?style= and ?cast= to see the book in another style or cast.
+function contact(args) {
+  const opt = k => { const i = args.indexOf('--' + k); return i >= 0 ? args[i + 1] : null; };
+  const slug = args.find((a, i) => !a.startsWith('--') && !(i && args[i - 1].startsWith('--')));
+  if (!slug) die('usage: picture-book contact <slug> [--taps N]');
+  const taps = +(opt('taps') ?? 9), b = loadBook(slug);
+  const grid = `<script>
+document.querySelector('.desk').hidden=true;
+const g=document.createElement('div');g.className='contact';
+SC.forEach((sc,i)=>{S={n:${taps}};const d=document.createElement('figure');
+  d.innerHTML='<svg viewBox="0 0 800 500"><rect width="800" height="500" fill="'+sc.bg+'"/><g class="art">'+sc.draw.call(sc,S)+'</g></svg>';
+  const c=document.createElement('figcaption');c.textContent=i+' '+sc.name+': '+sc.cap;d.appendChild(c);g.appendChild(d)});
+document.body.appendChild(g);
+</script><style>.contact{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:12px;padding:12px}
+.contact figure{margin:0;background:var(--paper);color:var(--ink)}.contact svg{display:block;width:100%}.contact figcaption{padding:4px 8px;font-size:13px}</style>`;
+  const out = path.join(SITE, slug, `contact-${taps}.html`);
+  write(out, fill(SKELETON, { BODY: bookBody(b) }).replace('</body>', grid + '</body>'));
+  console.log(path.relative(ROOT, out) + '   (add ?style=ink&cast=toys to compare)');
+}
+
 function copyDir(from, to, map) {
   for (const e of fs.readdirSync(from, { withFileTypes: true })) {
     const f = path.join(from, e.name), t = path.join(to, e.name);
@@ -134,5 +160,6 @@ const [cmd, ...args] = process.argv.slice(2);
 if (cmd === 'build') build(args);
 else if (cmd === 'check') slugs(args).forEach(check);
 else if (cmd === 'init') init(args);
+else if (cmd === 'contact') contact(args);
 else if (cmd === 'new') newPage(args);
-else { console.log('usage: picture-book <init <slug> "<Title>" | new <slug> <page> [--sheet] | build [slug...|--all] [--artifact|--pages] | check [slug...|--all]>'); process.exit(cmd ? 1 : 0); }
+else { console.log('usage: picture-book <init <slug> "<Title>" | new <slug> <page> [--sheet] | build [slug...|--all] [--artifact|--pages] | check [slug...|--all] | contact <slug> [--taps N]>'); process.exit(cmd ? 1 : 0); }

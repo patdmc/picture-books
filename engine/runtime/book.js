@@ -35,6 +35,10 @@ stage.addEventListener('pointerup',end);stage.addEventListener('pointercancel',e
 $('next').addEventListener('click',()=>go(idx+1,1));$('prev').addEventListener('click',()=>go(idx-1,-1));
 document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')go(idx+1,1);else if(e.key==='ArrowLeft')go(idx-1,-1)});
 
+/* style and cast: ?style= and ?cast= win, then the book's own, then paper */
+{let q;try{q=new URLSearchParams(location.search)}catch(_){q=new URLSearchParams()}
+  STYLE=STYLES.includes(q.get('style'))?q.get('style'):BOOK.style;useCast(q.get('cast')||BOOK.cast);
+  try{document.documentElement.dataset.style=STYLE;document.documentElement.dataset.cast=CAST}catch(_){}}
 const start=d=>{idx=clamp((d&&d.idx)|0,0,SC.length-1);S={n:0};render(true)};
 try{window.claude?.hot?.snapshot?.(()=>({idx}))}catch(_){}
 window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});
