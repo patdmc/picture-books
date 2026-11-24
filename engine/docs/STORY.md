@@ -21,7 +21,8 @@ Each form ends on a page that offers a way back to page 1 (a hand, a door, a but
 ## How-to books
 
 - Commands in the art are exact and runnable. A command a reader could copy must work as shown.
-- Commands appear in a `term()` as `$ ` lines. At most one new command per page.
+- Commands appear in a `term()` as `$ ` lines. One new step per page; a step is usually one command (`git add` + `git commit` can share a page).
+- A `term()` line without `$ ` is output, or a command typed inside Claude Code (`> /recap`). Put those on the cheat sheet by hand; `check` only tracks `$ ` lines.
 - Every command typed in the art is on the cheat sheet (`new <slug> cheat-sheet --sheet`), in story order. `check` warns when one is missing.
 - The cheat sheet's `note` for each command is a short plain sentence: what it does, not how.
 - Bubbles carry what a character says or asks. The caption carries the story. A command can be said in a bubble only if it is also on the terminal.

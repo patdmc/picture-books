@@ -1,0 +1,527 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<title>If You Give a Dev a Repo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Fredoka:wght@500;600;700&family=JetBrains+Mono:wght@500&family=Permanent+Marker&display=swap">
+<style>
+/* Layout: one cut-paper sheet lying on a green cutting mat; art on top, story text beneath, page arrows below. */
+:root{
+  --mat:#2f7566; --mat-line:rgba(255,255,255,.16); --on-mat:#f3f0e4; --on-mat-dim:#cfe3da;
+  --paper:#f8f4ea; --ink:#2b2a28; --accent:#f5c542; --shadow:rgba(0,0,0,.32);
+  --display:'Fredoka','Trebuchet MS','Arial Rounded MT Bold',sans-serif;
+  --body:'Andika','Trebuchet MS',Verdana,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --mat:#16332d; --mat-line:rgba(255,255,255,.08); --on-mat:#ece8da; --on-mat-dim:#9fbdb2;
+  --paper:#ece6d6; --ink:#262523; --accent:#e9b93a; --shadow:rgba(0,0,0,.55); color-scheme:dark } }
+:root[data-theme="dark"]{
+  --mat:#16332d; --mat-line:rgba(255,255,255,.08); --on-mat:#ece8da; --on-mat-dim:#9fbdb2;
+  --paper:#ece6d6; --ink:#262523; --accent:#e9b93a; --shadow:rgba(0,0,0,.55); color-scheme:dark }
+
+html,body{height:100%}
+body{
+  background:var(--mat);
+  background-image:linear-gradient(var(--mat-line) 1px,transparent 1px),linear-gradient(90deg,var(--mat-line) 1px,transparent 1px);
+  background-size:32px 32px;
+  color:var(--on-mat); font-family:var(--body);
+}
+.desk{
+  min-height:100%; box-sizing:border-box; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px;
+  padding-block:20px;
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px));
+}
+.sr{position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%)}
+.book{width:100%; max-width:min(860px, 118vh)}
+.sheet{
+  background:var(--paper); color:var(--ink); padding:14px 14px 10px; transform:rotate(-.35deg);
+  box-shadow:0 2px 0 rgba(0,0,0,.08), 0 10px 24px var(--shadow);
+}
+#stage{display:block; width:100%; height:auto; touch-action:pan-y; user-select:none; -webkit-user-select:none; transform:rotate(.5deg)}
+#cap{
+  font-size:clamp(1.05rem, 2.4vw, 1.4rem); line-height:1.45; margin:14px auto 0; max-width:40ch; text-align:center;
+  text-wrap:balance; min-height:4.4em; display:flex; align-items:center; justify-content:center;
+}
+#hint{margin:2px 0 4px; text-align:center; font-family:var(--display); font-weight:500; font-size:.85rem; letter-spacing:.04em; opacity:.6; min-height:1.3em}
+nav{display:flex; align-items:center; gap:18px; font-family:var(--display); font-weight:500}
+#count{min-width:7.5em; text-align:center; color:var(--on-mat-dim); font-variant-numeric:tabular-nums}
+nav button{
+  width:52px; height:52px; border:0; padding:0; cursor:pointer; background:var(--accent);
+  clip-path:polygon(8% 12%, 93% 6%, 96% 90%, 5% 95%); display:grid; place-items:center;
+}
+nav button svg{width:26px; height:26px; fill:var(--ink)}
+nav button:disabled{opacity:.35; cursor:default}
+nav button:focus-visible{outline:3px solid var(--on-mat); outline-offset:3px; clip-path:none}
+nav button:not(:disabled):active{transform:translateY(2px)}
+
+/* cut paper */
+.pc{filter:drop-shadow(1.2px 2.2px 1.2px rgba(0,0,0,.3))}
+.t{font-family:var(--display); font-weight:700}
+.mono{font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace; font-weight:500; white-space:pre; pointer-events:none}
+.t tspan{pointer-events:none}
+.hot{cursor:pointer; outline:none}
+.hot:focus-visible{outline:3px dashed #2b2a28; outline-offset:4px}
+[data-drag]{cursor:ns-resize; touch-action:none}
+
+@keyframes lay{from{opacity:0; translate:0 -18px}}
+@keyframes pop{from{opacity:0; translate:0 -26px}}
+@keyframes nudge{50%{translate:0 -6px}}
+@keyframes shake{from{rotate:-12deg} to{rotate:12deg}}
+@keyframes belt{to{translate:720px 0}}
+@keyframes rej{0%,58%{translate:0 0;opacity:1} 70%{translate:-220px -380px;opacity:1} 70.1%,100%{translate:-220px -380px;opacity:0}}
+@keyframes rejl{0%,57%{opacity:0} 58%,72%{opacity:1} 73%,100%{opacity:0}}
+@keyframes draw{from{clip-path:inset(-20px 100% -20px -20px)} to{clip-path:inset(-20px)}}
+@keyframes turnN{from{opacity:0; transform:translateX(46px) rotate(1.6deg)}}
+@keyframes turnP{from{opacity:0; transform:translateX(-46px) rotate(-2deg)}}
+.entering .pc{animation:lay .5s cubic-bezier(.2,.8,.3,1) both; animation-delay:calc(var(--i,0) * 12ms)}
+.pop{animation:pop .45s cubic-bezier(.2,.9,.3,1.2) both}
+.nudge{animation:nudge 1.5s ease-in-out infinite}
+.shake{transform-box:fill-box; transform-origin:50% 0; animation:shake .16s ease-in-out infinite alternate}
+.belt{animation:belt 8.8s linear infinite}
+.rej{animation:rej 8.8s linear infinite}
+.rejl{animation:rejl 8.8s linear infinite}
+.draw{animation:draw 1.1s ease-out both}
+.sheet.turnN{animation:turnN .4s ease-out}
+.sheet.turnP{animation:turnP .4s ease-out}
+@keyframes blink{50%{opacity:0}}
+.blink{animation:blink 1.1s steps(1) infinite}
+
+/* cheat sheet: real commands, click to copy */
+#snips{list-style:none; margin:10px auto 6px; padding:0; max-width:640px; display:grid; gap:10px}
+#snips li{display:grid; grid-template-columns:1fr auto; align-items:center; gap:4px 10px}
+#snips .note{grid-column:1 / -1; font-size:.92rem; line-height:1.35}
+#snips code{
+  display:block; overflow-x:auto; white-space:pre; padding:9px 12px; background:#2b2a28; color:#c9e27a;
+  font:500 .95rem/1.4 'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace; user-select:all; -webkit-user-select:all;
+}
+#snips button{
+  min-width:5.2em; min-height:40px; border:0; cursor:pointer; background:var(--accent); color:var(--ink);
+  font:600 .9rem var(--display); clip-path:polygon(4% 10%, 96% 4%, 98% 92%, 2% 96%);
+}
+#snips button:focus-visible{outline:3px solid var(--ink); outline-offset:2px; clip-path:none}
+#snips button.done{background:#a9cb4f}
+@media (prefers-reduced-motion: reduce){
+  .blink{animation:none}
+  .entering .pc,.pop,.nudge,.shake,.draw,.sheet.turnN,.sheet.turnP{animation:none}
+  .belt,.rej,.rejl{animation-duration:36s}
+}
+</style>
+
+<main class="desk">
+  <h1 class="sr">If You Give a Dev a Repo</h1>
+  <div class="book">
+    <article class="sheet" id="sheet">
+      <svg id="stage" viewBox="0 0 800 500" role="group" aria-label="Illustration">
+        <defs>
+          <filter id="grain" x="0" y="0" width="100%" height="100%">
+            <feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="3" seed="4"/>
+            <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  .28 0 0 0 -.06"/>
+          </filter>
+        </defs>
+        <g id="art"></g>
+        <rect width="800" height="500" filter="url(#grain)" pointer-events="none"/>
+      </svg>
+      <p id="cap" aria-live="polite"></p>
+      <p id="hint"></p>
+      <ul id="snips" aria-label="Commands to copy" hidden></ul>
+    </article>
+  </div>
+  <nav aria-label="Pages">
+    <button id="prev" type="button" aria-label="Previous page"><svg viewBox="0 0 40 40"><polygon points="27,5 7,20 27,35 24,20"/></svg></button>
+    <span id="count"></span>
+    <button id="next" type="button" aria-label="Next page"><svg viewBox="0 0 40 40"><polygon points="13,5 33,20 13,35 16,20"/></svg></button>
+  </nav>
+</main>
+
+<script>
+/* Cut-paper shapes, palette and tap targets. Every shape is a polygon with slightly off corners. */
+const C={red:'#d5433c',orange:'#ee8130',yellow:'#f5c542',lime:'#a9cb4f',green:'#4c9a52',teal:'#2e9a93',sky:'#a9d5e8',blue:'#3d6fb5',navy:'#243152',purple:'#7c52a5',lilac:'#cdb8e3',pink:'#f0a3b5',kraft:'#d9b38a',brown:'#8b5a3c',ink:'#2b2a28',white:'#f8f4ea',grey:'#9ba1a6',dgrey:'#5a5f66'};
+const P={teal:'#d6ece7',mint:'#cde6c1',pink:'#f8e1e5',kraft:'#eedfc8'}; /* page backgrounds: always paler than the subjects */
+const MC=[C.yellow,C.teal,C.pink,C.orange,C.lime,C.purple,C.red];
+const DEVS=[[C.orange,C.blue],[C.teal,C.navy],[C.purple,C.pink],[C.blue,C.orange],[C.pink,C.purple],[C.yellow,C.green],[C.red,C.navy]];
+
+/* ---------- cut-paper helpers: every shape is a polygon with slightly off corners ---------- */
+const h=(a,b,c)=>{const t=Math.sin(a*12.9898+b*78.233+c*37.719)*43758.5453;return (t-Math.floor(t))*2-1};
+const f=n=>(+n).toFixed(1);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const poly=(pts,fill,cls='',extra='')=>`<polygon class="pc ${cls}" points="${pts.map(p=>f(p[0])+','+f(p[1])).join(' ')}" fill="${fill}" ${extra}/>`;
+function box(x,y,w,hh,fill,cls='',extra=''){const J=Math.min(2.4,Math.min(w,hh)*.12);
+  return poly([[x,y],[x+w,y],[x+w,y+hh],[x,y+hh]].map((p,i)=>[p[0]+h(x,y,i)*J,p[1]+h(y,w,i+4)*J]),fill,cls,extra)}
+function circ(cx,cy,r,fill,ry=r,cls='',extra=''){const n=clamp(Math.round(r/3)+8,9,20),p=[];
+  for(let i=0;i<n;i++){const a=i/n*6.2832+h(cx,cy,i)*.1,k=1+h(cy,r,i)*.05;p.push([cx+Math.cos(a)*r*k,cy+Math.sin(a)*ry*k])}
+  return poly(p,fill,cls,extra)}
+function strip(x1,y1,x2,y2,w,fill,cls=''){const dx=x2-x1,dy=y2-y1,l=Math.hypot(dx,dy)||1,nx=-dy/l*w/2,ny=dx/l*w/2;
+  return poly([[x1+nx,y1+ny],[x2+nx*.85,y2+ny*.85],[x2-nx,y2-ny],[x1-nx*.9,y1-ny*.9]],fill,cls)}
+function ribbon(pts,w,fill,cls=''){const up=[],dn=[];pts.forEach((p,i)=>{const a=pts[Math.max(0,i-1)],b=pts[Math.min(pts.length-1,i+1)],dx=b[0]-a[0],dy=b[1]-a[1],l=Math.hypot(dx,dy)||1,nx=-dy/l*w/2,ny=dx/l*w/2;up.push([p[0]+nx,p[1]+ny]);dn.unshift([p[0]-nx,p[1]-ny])});
+  return poly(up.concat(dn),fill,cls)}
+const txt=(x,y,s,size,fill,anchor='middle',cls='')=>`<text class="pc t ${cls}" x="${x}" y="${y}" font-size="${size}" fill="${fill}" text-anchor="${anchor}">${s}</text>`;
+const line=(d)=>`<path d="${d}" fill="none" stroke="${C.ink}" stroke-width="3" stroke-linecap="round"/>`;
+const check=(x,y,s,col,cls='')=>strip(x-s*.5,y,x-s*.1,y+s*.42,s*.24,col,cls)+strip(x-s*.12,y+s*.42,x+s*.6,y-s*.5,s*.24,col,cls);
+let S={n:0};
+const hot=(label,inner,key='a',extra='')=>`<g class="hot${S.n?'':' nudge'}" data-tap="${key}" tabindex="0" role="button" aria-label="${label}" ${extra}>${inner}</g>`;
+
+
+/* The cast and props shared by every book. */
+function face(x,y,r,col,m='happy',lk=0){let g=circ(x,y,r,col);const ey=y-r*.12;
+  if(m==='sleep'){g+=strip(x-r*.6,ey,x-r*.2,ey,3,C.ink)+strip(x+r*.2,ey,x+r*.6,ey,3,C.ink)+line(`M${f(x-r*.15)},${f(y+r*.45)} h${f(r*.3)}`)}
+  else{for(const s of[-1,1])g+=circ(x+s*r*.4,ey,r*.27,C.white)+circ(x+s*r*.4+lk*r*.1,ey,r*.12,C.ink);
+    if(m==='happy')g+=line(`M${f(x-r*.35)},${f(y+r*.35)} q${f(r*.35)},${f(r*.35)} ${f(r*.7)},0`);
+    else if(m==='flat')g+=line(`M${f(x-r*.3)},${f(y+r*.45)} h${f(r*.6)}`);
+    else if(m==='worry')g+=line(`M${f(x-r*.35)},${f(y+r*.55)} q${f(r*.35)},${f(-r*.3)} ${f(r*.7)},0`);
+    else g+=circ(x,y+r*.5,r*.18,C.ink)}
+  return g}
+function dev(x,y,s,c,o={}){const [hd,bd]=c;let g='';
+  g+=strip(-9,-42,-11,-4,10,C.ink)+strip(9,-42,11,-4,10,C.ink)+box(-21,-7,17,9,C.ink)+box(4,-7,17,9,C.ink);
+  g+=o.up2?strip(-17,-82,-40,-114,9,hd):strip(-17,-82,-36,-54,9,hd);
+  g+=o.up?strip(17,-82,40,-114,9,hd):strip(17,-82,36,-54,9,hd);
+  g+=poly([[-23,-40],[24,-41],[18,-92],[-17,-91]],bd);
+  if(o.tuft)g+=poly([[-10,-130],[2,-150],[4,-132],[14,-146],[12,-128]],bd);
+  g+=face(0,-112,23,hd,o.m,o.look||0);
+  return `<g transform="translate(${x},${y}) scale(${s})" ${o.cls?`class="${o.cls}"`:''}>${g}</g>`}
+function metric(x,y,r,col=C.yellow,cls=''){return `<g class="${cls}">`+circ(x,y,r,col)+circ(x-r*.33,y-r*.12,r*.11,C.ink)+circ(x+r*.33,y-r*.12,r*.11,C.ink)+line(`M${f(x-r*.3)},${f(y+r*.25)} q${f(r*.3)},${f(r*.3)} ${f(r*.6)},0`)+'</g>'}
+function graph(x,y,w,hh,vals,col,o={}){const px0=x+44,px1=x+w-26,py0=y+hh-36,py1=y+26;
+  const X=i=>px0+(px1-px0)*i/(vals.length-1),Y=v=>py0-(py0-py1)*v,pts=vals.map((v,i)=>[X(i),Y(v)]);
+  let s=box(x,y,w,hh,C.white)+strip(x+30,y+16,x+30,py0+8,5,C.ink)+strip(x+26,py0+6,x+w-14,py0+6,5,C.ink);
+  if(!o.noline)s+=ribbon(pts,o.lw||8,col,o.cls||'');
+  return {s,pts,X,Y,px0,px1,py0,py1}}
+function dragon(x,y,fire){let g=poly([[30,-10],[78,-34],[42,-30]],C.green)+box(-8,-10,11,11,C.green)+box(18,-10,11,11,C.green)+circ(10,-30,31,C.green,24)
+  +poly([[4,-46],[46,-90],[36,-40]],C.purple)+poly([[-6,-52],[2,-68],[8,-52]],C.lime)+poly([[10,-54],[19,-70],[25,-52]],C.lime)
+  +circ(-28,-54,17,C.green)+box(-54,-58,24,14,C.green)+circ(-30,-60,5.5,C.white)+circ(-31.5,-60,2.4,C.ink)+poly([[-34,-70],[-28,-84],[-22,-69]],C.lime);
+  if(fire)g+=poly([[-56,-54],[-100,-66],[-84,-51],[-108,-40],[-56,-45]],C.orange,'pop')+poly([[-56,-52],[-82,-55],[-74,-49],[-56,-47]],C.yellow,'pop');
+  return `<g transform="translate(${x},${y})">${g}</g>`}
+function bubble(cx,cy,rx,ry,tx,ty){return circ(cx,cy,rx,C.white,ry)+circ(cx+(tx-cx)*.72,cy+(ty-cy)*.72,15,C.white)+circ(cx+(tx-cx)*.9,cy+(ty-cy)*.9,8,C.white)}
+function heart(x,y,s,col,cls=''){const p=[];for(let i=0;i<26;i++){const t=i/26*6.2832;p.push([x+s*16*Math.sin(t)**3,y-s*(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t))])}return poly(p,col,cls)}
+function arm(y){return strip(830,y+12,585,y,36,C.purple)+circ(578,y,26,C.purple)}
+function rocket(x,y,cls=''){return `<g class="${cls}">`+poly([[x-12,y+4],[x,y+34],[x+12,y+4]],C.yellow)+poly([[x-13,y-18],[x-28,y+6],[x-13,y+2]],C.red)+poly([[x+13,y-18],[x+28,y+6],[x+13,y+2]],C.red)+box(x-13,y-50,26,54,C.white)+poly([[x-14,y-48],[x,y-78],[x+14,y-48]],C.red)+circ(x,y-28,6,C.blue)+'</g>'}
+function book(x,y,w,cls=''){return `<g class="${cls}">`+box(x,y,w,w*1.25,C.white)+strip(x+w*.2,y+w*.3,x+w*.8,y+w*.3,3,C.grey)+strip(x+w*.2,y+w*.55,x+w*.8,y+w*.55,3,C.grey)+strip(x+w*.2,y+w*.8,x+w*.6,y+w*.8,3,C.grey)+'</g>'}
+
+
+/* ---------- book two cast ---------- */
+const AC=[C.teal,C.purple,C.red,C.blue,C.orange,C.lime,C.yellow,C.green,C.navy,C.brown];
+function agent(x,y,s,col,o={}){let g=box(-15,-18,10,18,C.dgrey)+box(5,-18,10,18,C.dgrey)+strip(-22,-52,-37,-30,7,C.dgrey)+(o.up?strip(22,-52,40,-78,7,C.dgrey):strip(22,-52,37,-30,7,C.dgrey))
+  +box(-23,-60,46,44,col)+box(-11,-50,22,13,C.white)+strip(0,-94,0,-108,3,C.dgrey)+circ(0,-111,5,C.red)+box(-19,-94,38,32,C.white);
+  const lk=(o.look||0)*2;g+=circ(-8+lk,-80,4.5,C.ink)+circ(8+lk,-80,4.5,C.ink)+(o.m==='flat'?strip(-6,-69,6,-69,2.5,C.ink):line('M-6,-71 q6,5 12,0'));
+  return `<g transform="translate(${x},${y}) scale(${s})" ${o.cls?`class="${o.cls}"`:''}>${g}</g>`}
+function pr(x,y,w,cls='',mark=''){let s=box(x,y,w,w*1.2,C.white);for(let i=0;i<4;i++){const yy=y+w*.25+i*w*.22;s+=strip(x+w*.15,yy,x+w*(.55+.3*Math.abs(h(i,3,3))),yy,w*.07,i%3===2?C.red:C.green)}
+  return `<g class="${cls}">${s}${mark}</g>`}
+const mk=(x,y,s,size,rot=-3,cls='')=>`<text class="${cls}" x="${x}" y="${y}" font-size="${size}" fill="#c4161c" transform="rotate(${rot} ${x} ${y})" style="font-family:'Permanent Marker','Marker Felt','Comic Sans MS',cursive;pointer-events:none">${s}</text>`;
+const wavy=(x,y,cls='')=>`<path class="${cls}" d="M${x},${y} q150,-12 ${(790-x)/2},0 t${(790-x)/2},-4" fill="none" stroke="#c4161c" stroke-width="8" stroke-linecap="round"/>`;
+function sun(sx,sy){let s='';for(let i=0;i<8;i++){const a=i*.785;s+=poly([[sx+Math.cos(a-.2)*50,sy+Math.sin(a-.2)*50],[sx+Math.cos(a)*72,sy+Math.sin(a)*72],[sx+Math.cos(a+.2)*50,sy+Math.sin(a+.2)*50]],C.orange)}return s+circ(sx,sy,42,C.yellow)}
+
+
+/* ---------- words in the art: speech bubbles and terminals ---------- */
+const xe=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const pbWarn=m=>{if(typeof __warn==='function')__warn(m)};        /* check collects these; the browser ignores them */
+const textW=(s,size,mono)=>String(s).length*size*(mono?.6:.54);   /* an estimate: check has no fonts */
+function wrapWords(s,w,size){const out=[];let cur='';
+  for(const wd of String(s).split(/\s+/).filter(Boolean)){const t=cur?cur+' '+wd:wd;if(cur&&textW(t,size)>w){out.push(cur);cur=wd}else cur=t}
+  if(cur)out.push(cur);return out}
+/* Speech bubble centred on (x,y); the tail points at the speaker's mouth (o.tx,o.ty). */
+function say(x,y,text,o={}){const size=o.size||22,lh=size*1.18,L=wrapWords(text,o.w||200,size);
+  const words=String(text).split(/\s+/).filter(Boolean).length;
+  if(words>10)pbWarn(`bubble has ${words} words (max 10): "${text}"`);
+  if(L.length>3)pbWarn(`bubble wraps to ${L.length} lines (max 3): "${text}"`);
+  const tw=Math.max(...L.map(l=>textW(l,size))),rx=tw/2/.82+18,ry=L.length*lh/2/.74+20;
+  const tx=o.tx??x-rx*.4,ty=o.ty??y+ry+50,a=Math.atan2((ty-y)/ry,(tx-x)/rx);
+  let g=poly([[x+Math.cos(a-.28)*rx*.8,y+Math.sin(a-.28)*ry*.8],[tx,ty],[x+Math.cos(a+.28)*rx*.8,y+Math.sin(a+.28)*ry*.8]],o.col||C.white);
+  if(o.shout){const p=[],n=22;for(let i=0;i<n;i++){const t=i/n*6.2832,k=i%2?1.18:.96;p.push([x+Math.cos(t)*rx*k,y+Math.sin(t)*ry*k])}g+=poly(p,o.col||C.white)}
+  else g+=circ(x,y,rx,o.col||C.white,ry);
+  const y0=y-(L.length-1)*lh/2+size*.36;
+  g+=`<text class="t" x="${f(x)}" y="${f(y0)}" font-size="${size}" fill="${C.ink}" text-anchor="middle">`+L.map((l,i)=>`<tspan x="${f(x)}" dy="${i?f(lh):0}">${xe(l)}</tspan>`).join('')+'</text>';
+  return `<g class="${o.cls||''}">${g}</g>`}
+/* Terminal card. Lines starting with "$ " are commands (lime); the rest are output (white).
+   o.upto shows only the first N lines, so each tap can type the next one. */
+function term(x,y,w,hh,lines,o={}){const size=o.size||18,lh=size*1.45,n=clamp(o.upto??lines.length,0,lines.length);
+  let s=box(x,y,w,hh,C.ink)+box(x,y,w,26,C.dgrey);[0,1,2].forEach(i=>s+=circ(x+18+i*20,y+13,5.5,[C.red,C.yellow,C.lime][i]));
+  if(o.title)s+=`<text class="mono" x="${x+w/2}" y="${y+18}" font-size="13" fill="${C.white}" text-anchor="middle">${xe(o.title)}</text>`;
+  if(lines.length*lh+36>hh)pbWarn(`terminal holds ${lines.length} lines but is only ${hh} tall`);
+  lines.forEach((l,i)=>{const cmd=l.startsWith('$ ');if(cmd&&typeof __cmd==='function')__cmd(l.slice(2));
+    if(textW(l,size,1)>w-28)pbWarn(`terminal line too wide for ${w}px at size ${size}: "${l}"`);
+    if(i<n)s+=`<text class="mono${i===n-1&&o.upto!=null?' pop':''}" x="${x+14}" y="${f(y+34+size+i*lh)}" font-size="${size}" fill="${cmd?C.lime:C.white}">${xe(l)}</text>`});
+  if(o.cursor!==false){const r=Math.max(n-1,0),cy=y+34+size+r*lh,cx=x+14+(n?textW(lines[n-1],size,1)+4:0);s+=box(cx,cy-size*.8,size*.55,size,C.lime,'blink')}
+  return `<g class="${o.cls||''}">${s}</g>`}
+
+
+/* ---------- Getting Started cast ---------- */
+/* The Repo: a cardboard box with a face. Feet at (x,y), about 100 wide and 100 tall at s=1.
+   o.awake opens its eyes; o.page shows a page sticking out of the top; o.folder a yellow folder. */
+function repo(x,y,s,o={}){let g=poly([[-50,-80],[-74,-104],[-24,-98],[0,-80]],C.brown)+poly([[50,-80],[74,-104],[24,-98],[0,-80]],C.brown);
+  if(o.page)g+=box(-22,-128,44,56,C.white)+strip(-14,-114,14,-114,3,C.grey)+strip(-14,-102,10,-102,3,C.grey);
+  if(o.folder)g+=box(-34,-126,24,12,C.yellow)+box(-34,-118,68,48,C.yellow);
+  g+=box(-50,-80,100,80,C.kraft)+box(-6,-80,12,26,C.yellow);
+  const lk=(o.look||0)*3;
+  if(o.awake)g+=circ(-20,-40,8,C.white)+circ(-20+lk,-40,3.6,C.ink)+circ(20,-40,8,C.white)+circ(20+lk,-40,3.6,C.ink)+(o.m==='wow'?circ(0,-20,5,C.ink):line('M-9,-22 q9,7 18,0'));
+  else g+=strip(-27,-40,-13,-40,3,C.ink)+strip(13,-40,27,-40,3,C.ink);
+  return `<g transform="translate(${x},${y}) scale(${s})" ${o.cls?`class="${o.cls}"`:''}>${g}</g>`}
+/* A save (commit), drawn as an instant photo. */
+function photo(x,y,w,col=C.sky,cls='',label=''){return `<g class="${cls}">`+box(x,y,w,w*1.18,C.white)+box(x+w*.1,y+w*.1,w*.8,w*.72,col)+box(x+w*.36,y+w*.26,w*.28,w*.38,C.white)+(label?mk(x+w*.1,y+w*1.07,label,w*.13,-2):'')+'</g>'}
+/* The remote: a paper cloud labelled origin, centred on (x,y). */
+function cloud(x,y,cls=''){return `<g class="${cls}">`+circ(x-48,y+6,38,C.white)+circ(x,y-16,50,C.white)+circ(x+52,y+4,40,C.white)+box(x-80,y+4,164,40,C.white)+txt(x,y+30,'origin',24,C.ink)+'</g>'}
+
+
+/* ---------- dev-repo helpers ---------- */
+/* The book's terminal, top right. n = how many lines are showing. */
+const SH=(lines)=>36+lines.length*23.2+16;
+const tm=(lines,n,o={})=>term(o.x??360,o.y??28,420,SH(lines),lines,{upto:n,size:16,title:'my-site'});
+const tmHot=(lines,n,o={})=>hot('Type the command',tm(lines,n,o));
+/* Main, as a string of saves, with an optional branch hanging off it. */
+const SAVE=[C.sky,C.pink,C.lime,C.orange];
+function tracks(o={}){const y=o.y??300,k=o.saves??3;let s=strip(300,y,790,y,5,C.ink);
+  for(let i=0;i<k;i++)s+=photo(320+i*105,y-12,62,SAVE[i],i===k-1&&o.popLast?'pop':'');
+  s+=mk(300,y+108,'main',26,-4);
+  if(o.branch){s+=strip(610,y+4,770,y+120,6,C.green)+mk(640,y+178,'new-idea',24,-4);
+    if(o.branchSave)s+=photo(700,y+58,58,C.orange,o.branchPop?'pop':'')}
+  return s}
+
+
+/* ---------- the pages, in cut order ---------- */
+const SC=[
+/* cover */ Object.assign({name:"cover"},
+({
+  cap: 'A cut-paper story about git: saving your work, trying ideas, and sharing them.',
+  hint: 'Tap the repo, or turn the page.',
+}),
+({
+  bg: P.mint,
+  tap: ()=>go(1,1),
+  draw(){return txt(400,92,'If You Give a Dev',58,C.ink)+txt(400,166,'a Repo…',66,C.red)
+    +dev(240,468,2.1,DEVS[0],{up:true,look:1,m:'wow'})+arm(330)+hot('Give the Dev a repo',repo(560,372,.9,{look:-1}))},
+})),
+
+/* init */ Object.assign({name:"init"},
+({
+  cap: "They’re gonna want to make it a real repo.",
+  hint: "Tap the terminal.",
+}),
+({
+  bg: C.sky,
+  draw(S){const L=["$ git init -b main","Initialized empty Git repository"],U=[0,1,2],n=Math.min(S.n,U.length-1),done=n===U.length-1;
+    return dev(120,470,1.5,DEVS[0],{m:done?'happy':'flat',look:1})+repo(310,470,1.3,{awake:done,look:-1})+(done?say(330,250,'Hi! I’m a repo.',{tx:320,ty:330,cls:'pop'}):'')+tmHot(L,U[n])},
+})),
+
+/* page */ Object.assign({name:"page"},
+({
+  cap: "Once it’s a repo, they’re gonna want to put a page in it.",
+  hint: "Tap the terminal.",
+}),
+({
+  bg: P.pink,
+  draw(S){const L=["$ echo \"hello\" > index.html"],U=[0,1],n=Math.min(S.n,U.length-1),done=n===U.length-1;
+    return dev(120,470,1.5,DEVS[0],{m:'happy',look:1,up:done})+(done?repo(310,470,1.3,{awake:true,page:true,look:-1,cls:'pop'}):repo(310,470,1.3,{awake:true,look:-1}))+tmHot(L,U[n])},
+})),
+
+/* status */ Object.assign({name:"status"},
+({
+  cap: "With a page in it, they’re gonna ask the repo what changed.",
+  hint: "Tap the terminal.",
+}),
+({
+  bg: C.lilac,
+  draw(S){const L=["$ git status","Untracked files:","  index.html"],U=[0,1,3],n=Math.min(S.n,U.length-1),done=n===U.length-1;
+    return dev(120,470,1.5,DEVS[0],{m:'happy',look:1})+repo(310,470,1.3,{awake:true,page:true,look:-1,m:done?'wow':''})+(done?say(330,240,'This page is new!',{tx:320,ty:318,shout:true,col:C.yellow,cls:'pop'}):'')+tmHot(L,U[n])},
+})),
+
+/* stage */ Object.assign({name:"stage"},
+({
+  cap: "When the repo says the page is new, they’re gonna want to stage it.",
+  hint: "Tap the terminal.",
+}),
+({
+  bg: P.teal,
+  draw(S){const L=["$ git add index.html"],U=[0,1],n=Math.min(S.n,U.length-1),done=n===U.length-1;
+    return dev(120,470,1.5,DEVS[0],{m:'happy',look:1})+repo(290,470,1.1,{awake:true,page:!done,look:1})
+    +box(430,400,280,70,C.brown)+box(420,180,26,220,C.red)+box(694,180,26,220,C.red)+box(420,170,300,22,C.red)+txt(570,450,'staged',26,C.white)
+    +(done?book(545,300,58,'pop'):'')+tmHot(L,U[n])},
+})),
+
+/* commit */ Object.assign({name:"commit"},
+({
+  cap: "Once it’s staged, they’re gonna want to save it.",
+  hint: "Tap the terminal.",
+}),
+({
+  bg: P.mint,
+  draw(S){const L=["$ git commit -m \"Add the first page\"","1 file changed"],U=[0,1,2],n=Math.min(S.n,U.length-1),done=n===U.length-1;
+    return dev(120,470,1.5,DEVS[0],{m:done?'wow':'happy',look:1})+box(430,400,280,70,C.brown)+(done?poly([[540,190],[560,240],[610,250],[565,270],[575,320],[540,290],[505,320],[515,270],[470,250],[520,240]],C.yellow,'pop')+photo(500,215,90,C.sky,'pop'):book(545,300,58))+tmHot(L,U[n])},
+})),
+
+/* message */ Object.assign({name:"message"},
+({
+  cap: 'Then they’re gonna need a message that says what they did and why.',
+  hint: 'Tap the photo.',
+}),
+({
+  bg: C.lilac,
+  draw(S){const done=S.n>0;
+    return dev(140,470,1.6,DEVS[0],{m:'happy',look:1})+(done?say(250,110,'Added the first page, so the site says hello.',{tx:170,ty:200,w:230,cls:'pop'}):'')
+      +hot('Write the message',photo(440,150,200,C.sky,'',done?'Add the first page':''))},
+})),
+
+/* log */ Object.assign({name:"log"},
+({
+  cap: "After a few saves, they’re gonna want to see the history.",
+  hint: "Tap the terminal.",
+}),
+({
+  bg: P.pink,
+  draw(S){const L=["$ git log --oneline","c41f2a9 Add a footer","8b03e1d Fix a typo","937b9f8 Add the first page"],U=[0,1,4],n=Math.min(S.n,U.length-1),done=n===U.length-1;
+    return dev(110,470,1.4,DEVS[0],{m:done?'wow':'happy',look:1})+tracks({y:290})+tmHot(L,U[n])},
+})),
+
+/* branch */ Object.assign({name:"branch"},
+({
+  cap: "With all that history behind them, they’re gonna want to try a new idea.",
+  hint: "Tap the terminal.",
+}),
+({
+  bg: C.sky,
+  draw(S){const L=["$ git switch -c new-idea","Switched to a new branch 'new-idea'"],U=[0,1,2],n=Math.min(S.n,U.length-1),done=n===U.length-1;
+    return dev(110,470,1.4,DEVS[0],{m:'happy',look:1,up:done})+tracks({y:220,branch:done})+tmHot(L,U[n])},
+})),
+
+/* break */ Object.assign({name:"break"},
+({
+  cap: "Once they’re on a branch, they can break things and main stays safe.",
+  hint: "Tap the terminal.",
+}),
+({
+  bg: P.teal,
+  draw(S){const L=["$ git commit -am \"Try a new idea\""],U=[0,1],n=Math.min(S.n,U.length-1),done=n===U.length-1;
+    return dev(110,470,1.4,DEVS[0],{m:done?'wow':'happy',look:1})+tracks({y:220,branch:true,branchSave:done,branchPop:true})+(done?check(540,140,44,C.green,'pop'):'')+tmHot(L,U[n])},
+})),
+
+/* back */ Object.assign({name:"back"},
+({
+  cap: "When the idea works, they’re gonna want to go back to main.",
+  hint: "Tap the terminal.",
+}),
+({
+  bg: P.mint,
+  draw(S){const L=["$ git switch main","Switched to branch 'main'"],U=[0,1,2],n=Math.min(S.n,U.length-1),done=n===U.length-1;
+    return tracks({y:220,branch:true,branchSave:true})+(done?dev(650,216,.45,DEVS[0],{m:'happy',look:-1,cls:'pop'}):dev(774,346,.45,DEVS[0],{m:'flat',look:-1}))+dev(110,470,1.4,DEVS[0],{m:'happy',look:1})+tmHot(L,U[n])},
+})),
+
+/* merge */ Object.assign({name:"merge"},
+({
+  cap: "Then they’re gonna want the idea on main too.",
+  hint: "Tap the terminal.",
+}),
+({
+  bg: C.lilac,
+  draw(S){const L=["$ git merge new-idea","Fast-forward"],U=[0,1,2],n=Math.min(S.n,U.length-1),done=n===U.length-1;
+    return dev(110,470,1.4,DEVS[0],{m:done?'wow':'happy',look:1,up:done,up2:done})+tracks({y:220,saves:done?4:3,popLast:true,branch:!done,branchSave:!done})+(done?check(640,330,50,C.green,'pop'):'')+tmHot(L,U[n])},
+})),
+
+/* remote */ Object.assign({name:"remote"},
+({
+  cap: "So they’re gonna want somewhere to keep it besides their laptop.",
+  hint: "Tap the terminal.",
+}),
+({
+  bg: C.sky,
+  draw(S){const L=["$ git remote add origin <your repo URL>"],U=[0,1],n=Math.min(S.n,U.length-1),done=n===U.length-1;
+    return dev(110,470,1.4,DEVS[0],{m:'happy',look:1})+repo(300,470,1.1,{awake:true,look:-1,m:done?'wow':''})+(done?cloud(180,120,'pop'):'')+tmHot(L,U[n])},
+})),
+
+/* push */ Object.assign({name:"push"},
+({
+  cap: "Once it has a home, they’re gonna push it up.",
+  hint: "Tap the terminal.",
+}),
+({
+  bg: C.sky,
+  draw(S){const L=["$ git push -u origin main","* [new branch]  main -> main"],U=[0,1,2],n=Math.min(S.n,U.length-1),done=n===U.length-1;
+    return dev(110,470,1.4,DEVS[0],{m:done?'wow':'happy',look:1,up:done})+cloud(180,120)+(done?rocket(300,330,'pop')+repo(180,100,.45,{awake:true,cls:'pop'}):repo(300,470,1.1,{awake:true,look:-1}))+tmHot(L,U[n])},
+})),
+
+/* clone */ Object.assign({name:"clone"},
+({
+  cap: "When it’s up there, a friend is gonna want a copy.",
+  hint: "Tap the terminal.",
+}),
+({
+  bg: P.pink,
+  draw(S){const L=["$ git clone <your repo URL>"],U=[0,1],n=Math.min(S.n,U.length-1),done=n===U.length-1;
+    return cloud(180,120)+repo(180,100,.45,{awake:true})+dev(110,470,1.4,DEVS[0],{m:'happy',look:1})+dev(690,470,1.4,DEVS[1],{m:done?'wow':'flat',look:-1,up:done})+(done?repo(530,470,.9,{awake:true,look:1,cls:'pop'})+say(470,210,'Got my own copy!',{tx:668,ty:318,cls:'pop'}):'')+tmHot(L,U[n])},
+})),
+
+/* another */ Object.assign({name:"another"},
+({
+  cap: 'And when the friend has a copy, they’re gonna want a repo of their own. And then…',
+  hint: 'Give the friend a repo.',
+}),
+({
+  bg: P.teal,
+  draw(S){const done=S.n>0;
+    return dev(190,468,1.8,DEVS[1],{m:'wow',look:1,up:true})+(done?repo(320,468,1.1,{awake:true,look:-1,cls:'pop'})+say(400,140,'A repo of my own!',{tx:240,ty:220,cls:'pop'}):arm(300)+hot('Give the friend a repo',repo(560,340,.9,{look:-1})))},
+})),
+
+/* cheat-sheet */ Object.assign({name:"cheat-sheet"},
+({
+  cap: 'Here’s everything they typed.',
+  hint: 'Copy any command. Tap the repo to start again.',
+  commands: [
+    { cmd: "git init -b main", note: "Make this folder a repo, with main as its first branch." },
+    { cmd: "echo \"hello\" > index.html", note: "Make a page to save." },
+    { cmd: "git status", note: "See what changed." },
+    { cmd: "git add index.html", note: "Stage the page for the next save." },
+    { cmd: "git commit -m \"Add the first page\"", note: "Save a snapshot, with a message." },
+    { cmd: "git log --oneline", note: "See the history, one save per line." },
+    { cmd: "git switch -c new-idea", note: "Make a branch and move onto it." },
+    { cmd: "git commit -am \"Try a new idea\"", note: "Save every changed file git already tracks." },
+    { cmd: "git switch main", note: "Go back to main." },
+    { cmd: "git merge new-idea", note: "Bring the branch’s saves into main." },
+    { cmd: "git remote add origin <your repo URL>", note: "Name a home for the repo. Put your own repo’s address in place of <your repo URL>." },
+    { cmd: "git push -u origin main", note: "Send main up to that home." },
+    { cmd: "git clone <your repo URL>", note: "Make a copy somewhere else." },
+  ],
+}),
+({
+  bg: P.pink,
+  tap: ()=>go(1,1),
+  draw(){return dev(140,468,1.6,DEVS[0],{m:'happy',look:1})+tracks({y:150,saves:4})+arm(330)+hot('Start the story again',repo(560,372,.9,{look:-1}))},
+}))
+];
+
+/* ---------- the book ---------- */
+const $=id=>document.getElementById(id),stage=$('stage'),art=$('art'),sheet=$('sheet');
+let idx=0,drag=null,moved=false,swipe=null,enterT=0;
+function render(enter,focusKey){const sc=SC[idx];
+  art.innerHTML=`<rect width="800" height="500" fill="${sc.bg}"/>`+sc.draw(S);
+  if(enter){$('cap').textContent=sc.cap;$('hint').textContent=sc.hint;
+    $('count').textContent=idx?`page ${idx} of ${SC.length-1}`:'cover';$('prev').disabled=!idx;
+    $('next').setAttribute('aria-label',idx===SC.length-1?'Start the story again':'Next page');snips(sc.commands);
+    art.querySelectorAll('.pc').forEach((e,i)=>e.style.setProperty('--i',i));
+    stage.classList.add('entering');clearTimeout(enterT);enterT=setTimeout(()=>stage.classList.remove('entering'),1600)}
+  else stage.classList.remove('entering');
+  if(focusKey){const e=art.querySelector(`[data-tap="${focusKey}"]`);if(e)e.focus()}}
+/* cheat sheet: a page whose lines.js has commands:[{cmd,note}] lists them under the caption, each with a copy button */
+function copyText(s){if(navigator.clipboard&&window.isSecureContext)return navigator.clipboard.writeText(s).catch(()=>copyOld(s));return Promise.resolve(copyOld(s))}
+function copyOld(s){const t=document.createElement('textarea');t.value=s;t.setAttribute('readonly','');t.style.cssText='position:fixed;opacity:0;top:0;left:0';
+  document.body.appendChild(t);t.select();let ok=false;try{ok=document.execCommand('copy')}catch(_){}t.remove();if(!ok)throw new Error('copy blocked')}
+function snips(list){const ul=$('snips');ul.textContent='';ul.hidden=!(list&&list.length);if(ul.hidden)return;
+  for(const {cmd,note} of list){const li=document.createElement('li'),code=document.createElement('code'),b=document.createElement('button');
+    if(note){const p=document.createElement('span');p.className='note';p.textContent=note;li.appendChild(p)}
+    code.textContent=cmd;b.type='button';b.textContent='Copy';b.setAttribute('aria-label','Copy '+cmd);
+    b.addEventListener('click',()=>{let t;copyText(cmd).then(()=>{b.textContent='Copied';b.classList.add('done')},()=>{b.textContent='Select it';const r=document.createRange();r.selectNodeContents(code);const sel=getSelection();sel.removeAllRanges();sel.addRange(r)})
+      .finally(()=>{clearTimeout(t);t=setTimeout(()=>{b.textContent='Copy';b.classList.remove('done')},1500)})});
+    li.append(code,b);ul.appendChild(li)}}
+function go(i,dir){if(i<0)return;idx=i>=SC.length?1:i;S={n:0};
+  sheet.classList.remove('turnN','turnP');void sheet.offsetWidth;sheet.classList.add(dir<0?'turnP':'turnN');render(true)}
+function tap(key,kb){const sc=SC[idx];sc.tap?sc.tap(S,key):S.n++;if(SC[idx]===sc)render(false,kb&&key)}
+
+stage.addEventListener('click',e=>{if(moved){moved=false;return}const t=e.target.closest('[data-tap]');if(t)tap(t.dataset.tap)});
+stage.addEventListener('keydown',e=>{const t=e.target.closest('[data-tap]');if(t&&(e.key==='Enter'||e.key===' ')){e.preventDefault();e.stopPropagation();tap(t.dataset.tap,true)}});
+stage.addEventListener('pointerdown',e=>{moved=false;if(e.target.closest('[data-drag]')){drag=true;try{stage.setPointerCapture(e.pointerId)}catch(_){}}else swipe={x:e.clientX,y:e.clientY}});
+stage.addEventListener('pointermove',e=>{if(!drag)return;const r=stage.getBoundingClientRect();moved=true;S.n=1;
+  SC[idx].drag(S,(e.clientX-r.left)/r.width*800,(e.clientY-r.top)/r.height*500);render(false)});
+const end=e=>{if(swipe&&e.type==='pointerup'){const dx=e.clientX-swipe.x,dy=e.clientY-swipe.y;if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.5){moved=true;go(idx+(dx<0?1:-1),dx<0?1:-1);setTimeout(()=>moved=false,50)}}drag=null;swipe=null};
+stage.addEventListener('pointerup',end);stage.addEventListener('pointercancel',end);
+$('next').addEventListener('click',()=>go(idx+1,1));$('prev').addEventListener('click',()=>go(idx-1,-1));
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')go(idx+1,1);else if(e.key==='ArrowLeft')go(idx-1,-1)});
+
+const start=d=>{idx=clamp((d&&d.idx)|0,0,SC.length-1);S={n:0};render(true)};
+try{window.claude?.hot?.snapshot?.(()=>({idx}))}catch(_){}
+window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});
+
+</script>
+
+</body></html>

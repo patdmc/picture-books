@@ -1,0 +1,20 @@
+// The pages, in story order. Reorder, add or drop a page here.
+([
+  'cover',
+  'init',
+  'page',
+  'status',
+  'stage',
+  'commit',
+  'message',
+  'log',
+  'branch',
+  'break',
+  'back',
+  'merge',
+  'remote',
+  'push',
+  'clone',
+  'another',
+  'cheat-sheet',
+])

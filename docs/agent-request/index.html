@@ -55,7 +55,7 @@ nav button:not(:disabled):active{transform:translateY(2px)}
 /* cut paper */
 .pc{filter:drop-shadow(1.2px 2.2px 1.2px rgba(0,0,0,.3))}
 .t{font-family:var(--display); font-weight:700}
-.mono{font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace; font-weight:500; pointer-events:none}
+.mono{font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace; font-weight:500; white-space:pre; pointer-events:none}
 .t tspan{pointer-events:none}
 .hot{cursor:pointer; outline:none}
 .hot:focus-visible{outline:3px dashed #2b2a28; outline-offset:4px}
@@ -238,6 +238,23 @@ function term(x,y,w,hh,lines,o={}){const size=o.size||18,lh=size*1.45,n=clamp(o.
     if(i<n)s+=`<text class="mono${i===n-1&&o.upto!=null?' pop':''}" x="${x+14}" y="${f(y+34+size+i*lh)}" font-size="${size}" fill="${cmd?C.lime:C.white}">${xe(l)}</text>`});
   if(o.cursor!==false){const r=Math.max(n-1,0),cy=y+34+size+r*lh,cx=x+14+(n?textW(lines[n-1],size,1)+4:0);s+=box(cx,cy-size*.8,size*.55,size,C.lime,'blink')}
   return `<g class="${o.cls||''}">${s}</g>`}
+
+
+/* ---------- Getting Started cast ---------- */
+/* The Repo: a cardboard box with a face. Feet at (x,y), about 100 wide and 100 tall at s=1.
+   o.awake opens its eyes; o.page shows a page sticking out of the top; o.folder a yellow folder. */
+function repo(x,y,s,o={}){let g=poly([[-50,-80],[-74,-104],[-24,-98],[0,-80]],C.brown)+poly([[50,-80],[74,-104],[24,-98],[0,-80]],C.brown);
+  if(o.page)g+=box(-22,-128,44,56,C.white)+strip(-14,-114,14,-114,3,C.grey)+strip(-14,-102,10,-102,3,C.grey);
+  if(o.folder)g+=box(-34,-126,24,12,C.yellow)+box(-34,-118,68,48,C.yellow);
+  g+=box(-50,-80,100,80,C.kraft)+box(-6,-80,12,26,C.yellow);
+  const lk=(o.look||0)*3;
+  if(o.awake)g+=circ(-20,-40,8,C.white)+circ(-20+lk,-40,3.6,C.ink)+circ(20,-40,8,C.white)+circ(20+lk,-40,3.6,C.ink)+(o.m==='wow'?circ(0,-20,5,C.ink):line('M-9,-22 q9,7 18,0'));
+  else g+=strip(-27,-40,-13,-40,3,C.ink)+strip(13,-40,27,-40,3,C.ink);
+  return `<g transform="translate(${x},${y}) scale(${s})" ${o.cls?`class="${o.cls}"`:''}>${g}</g>`}
+/* A save (commit), drawn as an instant photo. */
+function photo(x,y,w,col=C.sky,cls='',label=''){return `<g class="${cls}">`+box(x,y,w,w*1.18,C.white)+box(x+w*.1,y+w*.1,w*.8,w*.72,col)+box(x+w*.36,y+w*.26,w*.28,w*.38,C.white)+(label?mk(x+w*.1,y+w*1.07,label,w*.13,-2):'')+'</g>'}
+/* The remote: a paper cloud labelled origin, centred on (x,y). */
+function cloud(x,y,cls=''){return `<g class="${cls}">`+circ(x-48,y+6,38,C.white)+circ(x,y-16,50,C.white)+circ(x+52,y+4,40,C.white)+box(x-80,y+4,164,40,C.white)+txt(x,y+30,'origin',24,C.ink)+'</g>'}
 
 
 /* ---------- book three helpers ---------- */

@@ -73,6 +73,9 @@ A page is a folder in `books/<slug>/pages/`. It holds two files, each one JavaSc
 | `dragon(x,y,fire)` | Sits on a line, faces left |
 | `heart(x,y,s,col,cls)`, `rocket(x,y,cls)`, `sun(x,y)` | Props |
 | `arm(y)` | Purple arm reaching in from the right edge; hand at about (578, y) |
+| `repo(x,y,s,{awake,look,m,page,folder,cls})` | The Repo: a cardboard box with a face, about 100 tall at s=1. `page` or `folder` sticks out of the top. |
+| `photo(x,y,w,col,cls,label)` | A commit, drawn as an instant photo; `label` in red marker. |
+| `cloud(x,y,cls)` | The remote: a paper cloud labelled origin. |
 | `say(x,y,text,{tx,ty,w,size,shout,col,cls})` | Speech bubble centred on `(x,y)`, tail to `(tx,ty)`. Wraps at `w` (200). Size 22. `shout` for a jagged edge. |
 | `term(x,y,w,h,lines,{upto,title,size,cursor,cls})` | Terminal card. `'$ cmd'` lines are commands (lime, recorded for the cheat-sheet check); other lines are output. `upto` shows the first N. Size 18, about 26 per line. |
 

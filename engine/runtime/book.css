@@ -50,7 +50,7 @@ nav button:not(:disabled):active{transform:translateY(2px)}
 /* cut paper */
 .pc{filter:drop-shadow(1.2px 2.2px 1.2px rgba(0,0,0,.3))}
 .t{font-family:var(--display); font-weight:700}
-.mono{font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace; font-weight:500; pointer-events:none}
+.mono{font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace; font-weight:500; white-space:pre; pointer-events:none}
 .t tspan{pointer-events:none}
 .hot{cursor:pointer; outline:none}
 .hot:focus-visible{outline:3px dashed #2b2a28; outline-offset:4px}

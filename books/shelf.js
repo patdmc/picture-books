@@ -3,4 +3,6 @@
   'dev-metric',
   'dev-agent',
   'agent-request',
+  'dev-repo',
+  'skill-repo',
 ])
