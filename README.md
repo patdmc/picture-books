@@ -46,7 +46,7 @@ The built pages are committed at the repo root (`index.html` and one folder per 
 node engine/cli/picture-book.js build --all --root
 ```
 
-Commit the result with the change. The workflow fails a push whose committed pages are stale.
+Commit the result with the change. The workflow checks every book and fails a push whose committed pages are stale; it does not deploy.
 
 ## Using the skills
 
